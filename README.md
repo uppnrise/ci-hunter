@@ -6,7 +6,7 @@ CI Hunter is a small Python codebase for detecting CI run slowdowns. It currentl
 - stores runs in SQLite,
 - computes run-duration regressions with a simple baseline strategy.
 
-This repo is early-stage and has no CLI or GitHub App auth flow yet.
+This repo is early-stage and has no CLI yet.
 
 ## Requirements
 
@@ -29,10 +29,16 @@ pip install -e ".[dev]"
 import os
 
 from ci_hunter.analyze import analyze_repo_runs
+from ci_hunter.github.auth import GitHubAppAuth
 from ci_hunter.github.client import GitHubActionsClient
 from ci_hunter.storage import Storage, StorageConfig
 
-token = os.environ["GITHUB_INSTALLATION_TOKEN"]
+auth = GitHubAppAuth(
+    app_id=os.environ["GITHUB_APP_ID"],
+    installation_id=os.environ["GITHUB_INSTALLATION_ID"],
+    private_key_pem=os.environ["GITHUB_PRIVATE_KEY_PEM"],
+)
+token = auth.get_installation_token().token
 client = GitHubActionsClient(token=token)
 runs = client.list_workflow_runs("owner/repo")
 
