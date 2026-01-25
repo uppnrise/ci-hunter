@@ -1,5 +1,5 @@
 from ci_hunter.github.client import WorkflowRun
-from ci_hunter.storage import Storage
+from ci_hunter.storage import Storage, StorageConfig
 
 REPO = "acme/repo"
 RUN_ID = 1
@@ -15,7 +15,7 @@ HEAD_SHA_UPDATED = "def456"
 
 
 def test_save_and_list_workflow_runs():
-    storage = Storage(":memory:")
+    storage = Storage(StorageConfig(database_url=":memory:"))
 
     run = WorkflowRun(
         id=RUN_ID,
@@ -33,7 +33,7 @@ def test_save_and_list_workflow_runs():
 
 
 def test_save_workflow_runs_overwrites_existing_entry():
-    storage = Storage(":memory:")
+    storage = Storage(StorageConfig(database_url=":memory:"))
 
     original = WorkflowRun(
         id=RUN_ID,

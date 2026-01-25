@@ -17,7 +17,9 @@ class StorageConfig:
 
 
 class Storage:
-    def __init__(self, database_url: str) -> None:
+    def __init__(self, database_url: str | StorageConfig) -> None:
+        if isinstance(database_url, StorageConfig):
+            database_url = database_url.database_url
         self._database_url = database_url
         self._lock = threading.Lock()
         self._connection = sqlite3.connect(self._database_url, check_same_thread=False)
