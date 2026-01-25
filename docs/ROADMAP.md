@@ -1,8 +1,11 @@
 # Roadmap (Planned)
 
-Items listed here are not implemented yet.
+## Done
 
 1) CLI command for fetch -> store -> analyze
-2) Run/step/test duration extraction from CI artifacts
-3) Regression reporting output (markdown/JSON)
-4) Optional delivery to GitHub PR comments
+
+## Planned
+
+1) Run/step/test duration extraction from CI artifacts
+2) Regression reporting output (markdown/JSON)
+3) Optional delivery to GitHub PR comments

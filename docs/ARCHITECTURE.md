@@ -136,7 +136,7 @@ labels:
 ## 14) Week-1 Build Plan (MVP)
 1. Bootstrap repo, config loader, SQLite schema, provider interface + GitHub fetch.
 2. Implement change-point + flake detectors with synthetic data; add unit tests; define minimum history policy and degraded mode messaging.
-3. Wire LangGraph nodes; stub LLM with rule-based text; add CLI `analyze`; persist runs/detections after each execution.
+3. Wire LangGraph nodes; stub LLM with rule-based text; persist runs/detections after each execution. (CLI added.)
 4. GitHub comment delivery with dedup marker; dry-run mode.
 5. Add optional LLM explainer/remediator; prompt templates; token logging.
 
