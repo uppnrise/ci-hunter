@@ -4,6 +4,7 @@
 
 1) CLI command for fetch -> store -> analyze
 2) Basic step duration parsing from GitHub Actions log text
+3) JUnit test duration parsing (XML)
 
 ## Planned
 
