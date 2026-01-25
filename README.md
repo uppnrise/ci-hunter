@@ -29,6 +29,7 @@ pip install -e ".[dev]"
 import os
 
 from ci_hunter.analyze import analyze_repo_runs
+from ci_hunter.cli import DEFAULT_MIN_DELTA_PCT
 from ci_hunter.github.auth import GitHubAppAuth
 from ci_hunter.github.client import GitHubActionsClient
 from ci_hunter.storage import Storage, StorageConfig
@@ -48,7 +49,7 @@ storage.save_workflow_runs("owner/repo", runs)
 result = analyze_repo_runs(
     storage,
     "owner/repo",
-    min_delta_pct=0.2,
+    min_delta_pct=DEFAULT_MIN_DELTA_PCT,
 )
 print(result)
 ```
