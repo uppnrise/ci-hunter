@@ -6,9 +6,9 @@
 2) Basic step duration parsing from GitHub Actions log text
 3) JUnit test duration parsing (XML)
 4) CI artifact download + JUnit test duration extraction
+5) Run duration extraction helper
 
 ## Planned
 
-1) Run duration extraction from CI metadata/artifacts
-2) Regression reporting output (markdown/JSON)
-3) Optional delivery to GitHub PR comments
+1) Regression reporting output (markdown/JSON)
+2) Optional delivery to GitHub PR comments
