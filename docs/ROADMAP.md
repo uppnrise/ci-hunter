@@ -7,6 +7,6 @@
 
 ## Planned
 
-1) CI artifact download + run/step/test duration extraction
+1) CI artifact download + run/test duration extraction
 2) Regression reporting output (markdown/JSON)
 3) Optional delivery to GitHub PR comments
