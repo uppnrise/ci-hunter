@@ -6,6 +6,16 @@ from typing import List
 import httpx
 
 
+DEFAULT_BASE_URL = "https://api.github.com"
+DEFAULT_TIMEOUT_SECONDS = 10.0
+GITHUB_ACCEPT_HEADER = "application/vnd.github+json"
+GITHUB_API_VERSION = "2022-11-28"
+HEADER_ACCEPT = "Accept"
+HEADER_AUTHORIZATION = "Authorization"
+HEADER_API_VERSION = "X-GitHub-Api-Version"
+AUTH_SCHEME = "Bearer"
+
+
 @dataclass(frozen=True)
 class WorkflowRun:
     id: int
@@ -18,7 +28,7 @@ class WorkflowRun:
 
 
 class GitHubActionsClient:
-    def __init__(self, token: str, base_url: str = "https://api.github.com") -> None:
+    def __init__(self, token: str, base_url: str = DEFAULT_BASE_URL) -> None:
         self._token = token
         self._base_url = base_url.rstrip("/")
 
@@ -27,11 +37,11 @@ class GitHubActionsClient:
             f"{self._base_url}/repos/{repo}/actions/runs",
             params={"per_page": per_page},
             headers={
-                "Authorization": f"Bearer {self._token}",
-                "Accept": "application/vnd.github+json",
-                "X-GitHub-Api-Version": "2022-11-28",
+                HEADER_AUTHORIZATION: f"{AUTH_SCHEME} {self._token}",
+                HEADER_ACCEPT: GITHUB_ACCEPT_HEADER,
+                HEADER_API_VERSION: GITHUB_API_VERSION,
             },
-            timeout=10.0,
+            timeout=DEFAULT_TIMEOUT_SECONDS,
         )
         response.raise_for_status()
         payload = response.json()

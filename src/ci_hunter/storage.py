@@ -8,6 +8,9 @@ from typing import Iterable, List, Optional
 from ci_hunter.github.client import WorkflowRun
 
 
+WORKFLOW_RUNS_TABLE = "workflow_runs"
+
+
 @dataclass(frozen=True)
 class StorageConfig:
     database_url: str
@@ -26,8 +29,8 @@ class Storage:
     def _init_schema(self) -> None:
         with self._lock, self._connect() as connection:
             connection.execute(
-                """
-                CREATE TABLE IF NOT EXISTS workflow_runs (
+                f"""
+                CREATE TABLE IF NOT EXISTS {WORKFLOW_RUNS_TABLE} (
                     repo TEXT NOT NULL,
                     run_id INTEGER NOT NULL,
                     run_number INTEGER NOT NULL,
@@ -44,8 +47,8 @@ class Storage:
     def save_workflow_runs(self, repo: str, runs: Iterable[WorkflowRun]) -> None:
         with self._lock, self._connect() as connection:
             connection.executemany(
-                """
-                INSERT OR REPLACE INTO workflow_runs (
+                f"""
+                INSERT OR REPLACE INTO {WORKFLOW_RUNS_TABLE} (
                     repo,
                     run_id,
                     run_number,
@@ -74,7 +77,7 @@ class Storage:
     def list_workflow_runs(self, repo: str) -> List[WorkflowRun]:
         with self._lock, self._connect() as connection:
             rows = connection.execute(
-                """
+                f"""
                 SELECT
                     run_id,
                     run_number,
@@ -83,7 +86,7 @@ class Storage:
                     created_at,
                     updated_at,
                     head_sha
-                FROM workflow_runs
+                FROM {WORKFLOW_RUNS_TABLE}
                 WHERE repo = ?
                 ORDER BY run_number
                 """,
