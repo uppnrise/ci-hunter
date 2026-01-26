@@ -21,5 +21,6 @@ Notes:
 - Step timings are prefixed with the job log filename (e.g., `build/Checkout`).
 - JSON reports include timing fetch counts: `step_timings_attempted`, `step_timings_failed`,
   `test_timings_attempted`, `test_timings_failed`.
- - Config precedence: CLI > config > defaults. Secrets remain env-only.
- - Boolean values in config accept true/false (case-insensitive); invalid strings raise an error.
+- Config precedence: CLI > config > defaults. Secrets remain env-only.
+- Boolean values in config accept true/false (case-insensitive); invalid strings raise an error.
+- GitHub API calls use a small retry/backoff policy for transient errors (5xx/429).
