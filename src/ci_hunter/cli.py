@@ -37,6 +37,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--branch")
     parser.add_argument("--format", choices=[FORMAT_MARKDOWN, FORMAT_JSON], default=None)
     parser.add_argument("--dry-run", action="store_true", default=None)
+    parser.add_argument("--output-file")
     return parser
 
 
@@ -90,9 +91,7 @@ def main(
         report = markdown_renderer(result)
 
     if args.dry_run:
-        out.write(report)
-        if not report.endswith("\n"):
-            out.write("\n")
+        _write_report(report, args.output_file, out)
         return 0
 
     pr_number = args.pr_number
@@ -104,6 +103,7 @@ def main(
         else:
             raise ValueError("--pr-number is required unless --dry-run is set")
 
+    _write_report(report, args.output_file, out)
     comment_poster(token, args.repo, pr_number, report)
     return 0
 
@@ -126,6 +126,7 @@ def _merge_config(args: argparse.Namespace, config: AppConfig) -> argparse.Names
     _apply_if_missing(merged, "pr_number", config.pr_number)
     _apply_if_missing(merged, "commit", config.commit)
     _apply_if_missing(merged, "branch", config.branch)
+    _apply_if_missing(merged, "output_file", getattr(config, "output_file", None))
     return merged
 
 
@@ -154,3 +155,13 @@ def _apply_defaults(args: argparse.Namespace) -> None:
         args.format = FORMAT_MARKDOWN
     if args.dry_run is None:
         args.dry_run = False
+
+
+def _write_report(report: str, output_file: str | None, out: TextIO) -> None:
+    if output_file:
+        with open(output_file, "w", encoding="utf-8") as handle:
+            handle.write(report)
+        return
+    out.write(report)
+    if not report.endswith("\n"):
+        out.write("\n")

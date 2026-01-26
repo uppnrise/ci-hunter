@@ -306,3 +306,45 @@ dry_run: false
     assert captured["min_delta_pct"] == MIN_DELTA_PCT
     assert captured["baseline_strategy"] == "mean"
     assert captured["timings_run_limit"] == 3
+
+
+def test_cli_writes_report_to_output_file(tmp_path):
+    env = {
+        "GITHUB_APP_ID": "123",
+        "GITHUB_INSTALLATION_ID": "456",
+        "GITHUB_PRIVATE_KEY_PEM": "test-key",
+    }
+    output_path = tmp_path / "report.md"
+
+    def runner(**kwargs):
+        return AnalysisResult(
+            repo=REPO,
+            regressions=[],
+            reason=None,
+            step_regressions=[],
+            test_regressions=[],
+            step_reason=None,
+            test_reason=None,
+            step_timings_attempted=0,
+            step_timings_failed=0,
+            test_timings_attempted=0,
+            test_timings_failed=0,
+        )
+
+    exit_code = main(
+        [
+            "--repo",
+            REPO,
+            "--dry-run",
+            "--output-file",
+            str(output_path),
+        ],
+        env=env,
+        runner=runner,
+        auth_factory=lambda _env: DummyAuth(),
+        markdown_renderer=lambda _: "report body",
+        out=io.StringIO(),
+    )
+
+    assert exit_code == 0
+    assert output_path.read_text() == "report body"
