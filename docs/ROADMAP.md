@@ -8,8 +8,8 @@
 4) CI artifact download + JUnit test duration extraction
 5) Run duration extraction helper
 6) Markdown regression report rendering
+7) JSON regression report rendering
 
 ## Planned
 
-1) JSON regression report rendering
-2) Optional delivery to GitHub PR comments
+1) Optional delivery to GitHub PR comments
