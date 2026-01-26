@@ -70,6 +70,8 @@ The console script is installed as `ci-hunter` and wraps `ci_hunter.cli.main`. I
 - `--config` (YAML config file)
 - `--format {md,json}`
 - `--dry-run`
+- `--output-file`
+- `--no-comment`
 
 Examples:
 

@@ -13,7 +13,7 @@ Current parameters:
   - `--config` (YAML config file)
   - `--repo`, `--pr-number` (unless `--dry-run`), `--commit`/`--branch` (PR inference),
     `--min-delta-pct`, `--baseline-strategy`, `--db`, `--timings-run-limit`
-  - `--format {md,json}`, `--dry-run`, `--output-file`
+  - `--format {md,json}`, `--dry-run`, `--output-file`, `--no-comment`
 
 Once a config system is added, this file will list the supported env vars and YAML keys.
 
@@ -24,3 +24,4 @@ Notes:
 - Config precedence: CLI > config > defaults. Secrets remain env-only.
 - Boolean values in config accept true/false (case-insensitive); invalid strings raise an error.
 - GitHub API calls use a small retry/backoff policy for transient errors (5xx/429).
+- Config supports `output_file` and `no_comment` if you prefer file output without posting.
