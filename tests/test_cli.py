@@ -196,7 +196,7 @@ def test_cli_merges_config_with_cli_overrides(tmp_path):
 repo: acme/from-config
 min_delta_pct: 0.9
 baseline_strategy: mean
-db: "config.db"
+db: "ci_hunter.db"
 timings_run_limit: 3
 format: json
 dry_run: false
