@@ -10,7 +10,8 @@ Current parameters:
   - `baseline_strategy` accepted values: `median`, `mean`, `trimmed_mean`
 - CLI (console script `ci-hunter`, entrypoint `ci_hunter.cli.main`) uses:
   - `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, `GITHUB_PRIVATE_KEY_PEM`
-  - `--repo`, `--pr-number` (unless `--dry-run`), `--min-delta-pct`, `--baseline-strategy`, `--db`, `--timings-run-limit`
+  - `--repo`, `--pr-number` (unless `--dry-run`), `--commit`/`--branch` (PR inference),
+    `--min-delta-pct`, `--baseline-strategy`, `--db`, `--timings-run-limit`
   - `--format {md,json}`, `--dry-run`
 
 Once a config system is added, this file will list the supported env vars and YAML keys.
