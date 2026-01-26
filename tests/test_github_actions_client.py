@@ -71,3 +71,68 @@ def test_list_workflow_runs_parses_response():
             head_sha=HEAD_SHA,
         )
     ]
+
+
+@respx.mock
+def test_list_workflow_runs_follows_pagination():
+    client = GitHubActionsClient(token=TOKEN)
+
+    first_route = respx.get(
+        f"{DEFAULT_BASE_URL}/repos/{REPO}/actions/runs",
+        params={"per_page": PER_PAGE, "page": 1},
+        headers={
+            HEADER_AUTHORIZATION: f"{AUTH_SCHEME} {TOKEN}",
+            HEADER_ACCEPT: GITHUB_ACCEPT_HEADER,
+            HEADER_API_VERSION: GITHUB_API_VERSION,
+        },
+    ).mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "workflow_runs": [
+                    {
+                        "id": RUN_ID,
+                        "run_number": RUN_NUMBER,
+                        "status": STATUS_COMPLETED,
+                        "conclusion": CONCLUSION_SUCCESS,
+                        "created_at": CREATED_AT,
+                        "updated_at": UPDATED_AT,
+                        "head_sha": HEAD_SHA,
+                    }
+                ]
+            },
+            headers={"Link": "<https://api.github.com/resource?page=2>; rel=\"next\""},
+        )
+    )
+    second_route = respx.get(
+        f"{DEFAULT_BASE_URL}/repos/{REPO}/actions/runs",
+        params={"per_page": PER_PAGE, "page": 2},
+        headers={
+            HEADER_AUTHORIZATION: f"{AUTH_SCHEME} {TOKEN}",
+            HEADER_ACCEPT: GITHUB_ACCEPT_HEADER,
+            HEADER_API_VERSION: GITHUB_API_VERSION,
+        },
+    ).mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "workflow_runs": [
+                    {
+                        "id": RUN_ID + 1,
+                        "run_number": RUN_NUMBER + 1,
+                        "status": STATUS_COMPLETED,
+                        "conclusion": CONCLUSION_SUCCESS,
+                        "created_at": CREATED_AT,
+                        "updated_at": UPDATED_AT,
+                        "head_sha": HEAD_SHA,
+                    }
+                ]
+            },
+        )
+    )
+
+    runs = client.list_workflow_runs(REPO, per_page=PER_PAGE)
+
+    assert first_route.called
+    assert second_route.called
+    assert [run.id for run in runs] == [RUN_ID, RUN_ID + 1]

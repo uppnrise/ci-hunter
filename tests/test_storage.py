@@ -1,3 +1,6 @@
+import sqlite3
+import pytest
+
 from ci_hunter.github.client import WorkflowRun
 from ci_hunter.junit import TestDuration
 from ci_hunter.steps import StepDuration
@@ -71,6 +74,17 @@ def test_save_workflow_runs_overwrites_existing_entry():
     storage.save_workflow_runs(REPO, [updated])
 
     assert storage.list_workflow_runs(REPO) == [updated]
+
+
+def test_storage_enforces_foreign_keys():
+    storage = Storage(StorageConfig(database_url=":memory:"))
+
+    with pytest.raises(sqlite3.IntegrityError):
+        storage.save_step_durations(
+            REPO,
+            RUN_ID,
+            [StepDuration(name=STEP_CHECKOUT, duration_seconds=DURATION_CHECKOUT_SHORT)],
+        )
 
 
 def test_save_and_list_step_durations():

@@ -43,6 +43,7 @@ class Storage:
         self._database_url = database_url
         self._lock = threading.Lock()
         self._connection = sqlite3.connect(self._database_url, check_same_thread=False)
+        self._connection.execute("PRAGMA foreign_keys = ON;")
         self._init_schema()
 
     def _connect(self) -> sqlite3.Connection:

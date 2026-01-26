@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from typing import Optional
 
 from ci_hunter.detection import (
@@ -13,6 +12,7 @@ from ci_hunter.detection import (
     detect_run_duration_regressions,
 )
 from ci_hunter.storage import Storage
+from ci_hunter.time_utils import parse_iso_datetime
 
 
 @dataclass(frozen=True)
@@ -76,18 +76,9 @@ def analyze_repo_runs(
 
 
 def _duration_seconds(start: str, end: str) -> float:
-    start_dt = _parse_iso_datetime(start)
-    end_dt = _parse_iso_datetime(end)
+    start_dt = parse_iso_datetime(start)
+    end_dt = parse_iso_datetime(end)
     return (end_dt - start_dt).total_seconds()
-
-
-def _parse_iso_datetime(value: str) -> datetime:
-    if value.endswith("Z"):
-        return datetime.fromisoformat(value.replace("Z", "+00:00"))
-    parsed = datetime.fromisoformat(value)
-    if parsed.tzinfo is None:
-        return parsed.replace(tzinfo=timezone.utc)
-    return parsed
 
 
 def _validate_baseline_strategy(strategy: str) -> None:
