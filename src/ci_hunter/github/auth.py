@@ -17,6 +17,7 @@ from ci_hunter.github.client import (
     HEADER_API_VERSION,
     HEADER_AUTHORIZATION,
 )
+from ci_hunter.github.http import request_with_retry
 
 
 DEFAULT_JWT_TTL_SECONDS = 9 * 60
@@ -45,7 +46,8 @@ class GitHubAppAuth:
 
     def get_installation_token(self) -> InstallationToken:
         jwt_token = self._create_jwt()
-        response = httpx.post(
+        response = request_with_retry(
+            "POST",
             f"{self._base_url}/app/installations/{self._installation_id}/access_tokens",
             headers={
                 HEADER_AUTHORIZATION: f"{AUTH_SCHEME} {jwt_token}",

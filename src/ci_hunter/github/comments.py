@@ -12,6 +12,7 @@ from ci_hunter.github.client import (
     HEADER_API_VERSION,
     HEADER_AUTHORIZATION,
 )
+from ci_hunter.github.http import request_with_retry
 
 
 def post_pr_comment(
@@ -22,7 +23,8 @@ def post_pr_comment(
     *,
     base_url: str = DEFAULT_BASE_URL,
 ) -> int:
-    response = httpx.post(
+    response = request_with_retry(
+        "POST",
         f"{base_url.rstrip('/')}/repos/{repo}/issues/{pr_number}/comments",
         headers={
             HEADER_AUTHORIZATION: f"{AUTH_SCHEME} {token}",

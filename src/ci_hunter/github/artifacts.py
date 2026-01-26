@@ -16,6 +16,7 @@ from ci_hunter.github.client import (
     HEADER_API_VERSION,
     HEADER_AUTHORIZATION,
 )
+from ci_hunter.github.http import request_with_retry
 from ci_hunter.junit import TestDuration, parse_junit_durations
 
 
@@ -35,7 +36,8 @@ def fetch_junit_durations_from_artifacts(
 
 
 def _list_artifacts(token: str, repo: str, run_id: int, base_url: str) -> list[int]:
-    response = httpx.get(
+    response = request_with_retry(
+        "GET",
         f"{base_url.rstrip('/')}/repos/{repo}/actions/runs/{run_id}/artifacts",
         headers={
             HEADER_AUTHORIZATION: f"{AUTH_SCHEME} {token}",
@@ -55,7 +57,8 @@ def _download_artifact_zip(
     artifact_id: int,
     base_url: str,
 ) -> bytes:
-    response = httpx.get(
+    response = request_with_retry(
+        "GET",
         f"{base_url.rstrip('/')}/repos/{repo}/actions/artifacts/{artifact_id}/zip",
         headers={
             HEADER_AUTHORIZATION: f"{AUTH_SCHEME} {token}",

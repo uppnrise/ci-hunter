@@ -16,6 +16,7 @@ from ci_hunter.github.client import (
     HEADER_API_VERSION,
     HEADER_AUTHORIZATION,
 )
+from ci_hunter.github.http import request_with_retry
 from ci_hunter.steps import StepDuration, parse_step_durations
 
 
@@ -26,7 +27,8 @@ def fetch_run_step_durations(
     *,
     base_url: str = DEFAULT_BASE_URL,
 ) -> List[StepDuration]:
-    response = httpx.get(
+    response = request_with_retry(
+        "GET",
         f"{base_url.rstrip('/')}/repos/{repo}/actions/runs/{run_id}/logs",
         headers={
             HEADER_AUTHORIZATION: f"{AUTH_SCHEME} {token}",

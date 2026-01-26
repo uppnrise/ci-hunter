@@ -15,6 +15,7 @@ from ci_hunter.github.client import (
     HEADER_API_VERSION,
     HEADER_AUTHORIZATION,
 )
+from ci_hunter.github.http import request_with_retry
 from ci_hunter.time_utils import parse_iso_datetime
 
 
@@ -61,7 +62,8 @@ def _list_pulls_for_commit(
     commit: str,
     base_url: str,
 ) -> list[dict]:
-    response = httpx.get(
+    response = request_with_retry(
+        "GET",
         f"{base_url.rstrip('/')}/repos/{repo}/commits/{commit}/pulls",
         headers={
             HEADER_AUTHORIZATION: f"{AUTH_SCHEME} {token}",
@@ -81,7 +83,8 @@ def _list_pulls_for_branch(
     base_url: str,
 ) -> list[dict]:
     owner = repo.split("/")[0]
-    response = httpx.get(
+    response = request_with_retry(
+        "GET",
         f"{base_url.rstrip('/')}/repos/{repo}/pulls",
         params={"state": "open", "head": f"{owner}:{branch}"},
         headers={

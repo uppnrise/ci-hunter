@@ -5,6 +5,8 @@ from typing import List
 
 import httpx
 
+from ci_hunter.github.http import request_with_retry
+
 
 DEFAULT_BASE_URL = "https://api.github.com"
 DEFAULT_TIMEOUT_SECONDS = 10.0
@@ -36,7 +38,8 @@ class GitHubActionsClient:
         runs: list[WorkflowRun] = []
         page = 1
         while True:
-            response = httpx.get(
+            response = request_with_retry(
+                "GET",
                 f"{self._base_url}/repos/{repo}/actions/runs",
                 params={"per_page": per_page, "page": page},
                 headers={
