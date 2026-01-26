@@ -21,7 +21,11 @@ def render_markdown_report(result: AnalysisResult) -> str:
             SECTION_STEP,
             result.step_regressions,
             result.step_reason,
-            missing_data_note=MISSING_STEP_DATA if result.step_data_missing else None,
+            missing_data_note=_missing_data_note(
+                MISSING_STEP_DATA,
+                result.step_timings_attempted,
+                result.step_timings_failed,
+            ),
         )
     )
     lines.extend(
@@ -29,7 +33,11 @@ def render_markdown_report(result: AnalysisResult) -> str:
             SECTION_TEST,
             result.test_regressions,
             result.test_reason,
-            missing_data_note=MISSING_TEST_DATA if result.test_data_missing else None,
+            missing_data_note=_missing_data_note(
+                MISSING_TEST_DATA,
+                result.test_timings_attempted,
+                result.test_timings_failed,
+            ),
         )
     )
     return "\n".join(lines)
@@ -44,8 +52,10 @@ def render_json_report(result: AnalysisResult) -> str:
         "test_regressions": _render_regression_payloads(result.test_regressions),
         "step_reason": result.step_reason,
         "test_reason": result.test_reason,
-        "step_data_missing": result.step_data_missing,
-        "test_data_missing": result.test_data_missing,
+        "step_timings_attempted": result.step_timings_attempted,
+        "step_timings_failed": result.step_timings_failed,
+        "test_timings_attempted": result.test_timings_attempted,
+        "test_timings_failed": result.test_timings_failed,
     }
     return json.dumps(payload)
 
@@ -86,3 +96,11 @@ def _render_regression_payloads(regressions: list) -> list[dict]:
         }
         for regression in regressions
     ]
+
+
+def _missing_data_note(prefix: str, attempted: int | None, failed: int | None) -> str | None:
+    if attempted is None or failed is None:
+        return None
+    if attempted <= 0 or failed <= 0:
+        return None
+    return f"{prefix} for {failed}/{attempted} runs"

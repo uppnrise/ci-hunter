@@ -138,7 +138,7 @@ def test_fetch_store_analyze_fetches_step_and_test_durations():
         test_calls.append(run_id)
         return [TestDuration(name="tests.test_alpha", duration_seconds=float(run_id))]
 
-    fetch_store_analyze(
+    result = fetch_store_analyze(
         auth=DummyAuth(),
         client_factory=client_factory,
         storage=storage,
@@ -198,7 +198,7 @@ def test_fetch_store_analyze_skips_missing_timings():
             raise RuntimeError("artifact missing")
         return [TestDuration(name="tests.test_alpha", duration_seconds=1.0)]
 
-    fetch_store_analyze(
+    result = fetch_store_analyze(
         auth=DummyAuth(),
         client_factory=client_factory,
         storage=storage,
@@ -215,3 +215,7 @@ def test_fetch_store_analyze_skips_missing_timings():
     assert [sample.run_number for sample in storage.list_test_durations(REPO)] == [
         RUN_NUMBER_CURRENT,
     ]
+    assert result.step_timings_attempted == 2
+    assert result.step_timings_failed == 1
+    assert result.test_timings_attempted == 2
+    assert result.test_timings_failed == 1

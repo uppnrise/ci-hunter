@@ -35,8 +35,10 @@ def test_render_json_report():
         ],
         step_reason=None,
         test_reason=None,
-        step_data_missing=True,
-        test_data_missing=True,
+        step_timings_attempted=10,
+        step_timings_failed=3,
+        test_timings_attempted=10,
+        test_timings_failed=4,
     )
 
     report = render_json_report(result)
@@ -47,5 +49,7 @@ def test_render_json_report():
     assert payload["regressions"][0]["delta_pct"] == 0.5
     assert payload["step_regressions"][0]["metric"] == "Checkout"
     assert payload["test_regressions"][0]["metric"] == "tests.test_alpha"
-    assert payload["step_data_missing"] is True
-    assert payload["test_data_missing"] is True
+    assert payload["step_timings_attempted"] == 10
+    assert payload["step_timings_failed"] == 3
+    assert payload["test_timings_attempted"] == 10
+    assert payload["test_timings_failed"] == 4
