@@ -42,6 +42,16 @@ dry_run: "false"
     assert config.dry_run is False
 
 
+def test_load_config_boolean_ints_are_parsed():
+    config = load_config_from_text(
+        """
+no_comment: 1
+"""
+    )
+
+    assert config.no_comment is True
+
+
 def load_config_from_text(text: str) -> AppConfig:
     path = _write_config(text)
     return load_config(path)

@@ -19,6 +19,8 @@ class AppConfig:
     pr_number: Optional[int] = None
     commit: Optional[str] = None
     branch: Optional[str] = None
+    output_file: Optional[str] = None
+    no_comment: Optional[bool] = None
 
 
 def load_config(path: str | Path) -> AppConfig:
@@ -35,6 +37,8 @@ def load_config(path: str | Path) -> AppConfig:
         pr_number=_get_int(data, "pr_number"),
         commit=data.get("commit"),
         branch=data.get("branch"),
+        output_file=data.get("output_file"),
+        no_comment=_get_bool(data, "no_comment"),
     )
 
 
@@ -68,6 +72,8 @@ def _get_bool(data: dict[str, Any], key: str) -> Optional[bool]:
     if key not in data or data[key] is None:
         return None
     value = data[key]
+    if isinstance(value, int) and value in (0, 1):
+        return bool(value)
     if isinstance(value, bool):
         return value
     if isinstance(value, str):
