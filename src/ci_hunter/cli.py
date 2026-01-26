@@ -10,6 +10,7 @@ from ci_hunter.github.artifacts import fetch_junit_durations_from_artifacts
 from ci_hunter.github.client import GitHubActionsClient
 from ci_hunter.github.comments import post_pr_comment
 from ci_hunter.github.logs import fetch_run_step_durations
+from ci_hunter.github.pr_infer import InferredPullRequest, infer_pr_number
 from ci_hunter.runner import fetch_store_analyze
 from ci_hunter.report import render_json_report, render_markdown_report
 from ci_hunter.storage import Storage, StorageConfig
@@ -30,6 +31,8 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--db", default=DEFAULT_DB)
     parser.add_argument("--timings-run-limit", type=int, default=DEFAULT_TIMINGS_RUN_LIMIT)
     parser.add_argument("--pr-number", type=int)
+    parser.add_argument("--commit")
+    parser.add_argument("--branch")
     parser.add_argument("--format", choices=[FORMAT_MARKDOWN, FORMAT_JSON], default=FORMAT_MARKDOWN)
     parser.add_argument("--dry-run", action="store_true")
     return parser
@@ -41,6 +44,7 @@ def main(
     env: Mapping[str, str] | None = None,
     runner: Callable[..., object] = fetch_store_analyze,
     auth_factory: Callable[[Mapping[str, str]], GitHubAppAuth] | None = None,
+    pr_infer: Callable[..., InferredPullRequest | None] = infer_pr_number,
     markdown_renderer: Callable[..., str] = render_markdown_report,
     json_renderer: Callable[..., str] = render_json_report,
     comment_poster: Callable[..., int] = post_pr_comment,
@@ -85,9 +89,14 @@ def main(
             out.write("\n")
         return 0
 
-    if args.pr_number is None:
-        raise ValueError("--pr-number is required unless --dry-run is set")
+    pr_number = args.pr_number
+    if pr_number is None:
+        inferred = pr_infer(token=auth.get_installation_token().token, repo=args.repo, commit=args.commit, branch=args.branch)
+        if inferred is not None:
+            pr_number = inferred.number
+        else:
+            raise ValueError("--pr-number is required unless --dry-run is set")
 
     token = auth.get_installation_token().token
-    comment_poster(token, args.repo, args.pr_number, report)
+    comment_poster(token, args.repo, pr_number, report)
     return 0

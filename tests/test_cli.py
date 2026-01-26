@@ -129,3 +129,61 @@ def test_cli_posts_comment_when_pr_number_set():
     assert posted["repo"] == REPO
     assert posted["pr_number"] == PR_NUMBER
     assert posted["body"] == "comment body"
+
+
+def test_cli_infers_pr_number_when_missing():
+    env = {
+        "GITHUB_APP_ID": "123",
+        "GITHUB_INSTALLATION_ID": "456",
+        "GITHUB_PRIVATE_KEY_PEM": "test-key",
+    }
+    posted = {}
+
+    def runner(**kwargs):
+        return AnalysisResult(
+            repo=REPO,
+            regressions=[],
+            reason=None,
+            step_regressions=[],
+            test_regressions=[],
+            step_reason=None,
+            test_reason=None,
+            step_timings_attempted=0,
+            step_timings_failed=0,
+            test_timings_attempted=0,
+            test_timings_failed=0,
+        )
+
+    def comment_poster(token: str, repo: str, pr_number: int, body: str) -> int:
+        posted.update(
+            {
+                "token": token,
+                "repo": repo,
+                "pr_number": pr_number,
+                "body": body,
+            }
+        )
+        return 1
+
+    inferred = {"number": 99}
+
+    def pr_infer(*, token: str, repo: str, commit: str | None, branch: str | None):
+        return type("Inferred", (), {"number": inferred["number"], "multiple_matches": False})()
+
+    exit_code = main(
+        [
+            "--repo",
+            REPO,
+            "--commit",
+            "abc123",
+        ],
+        env=env,
+        runner=runner,
+        auth_factory=lambda _env: DummyAuth(),
+        markdown_renderer=lambda _: "comment body",
+        comment_poster=comment_poster,
+        pr_infer=pr_infer,
+    )
+
+    assert exit_code == 0
+    assert posted["pr_number"] == inferred["number"]
