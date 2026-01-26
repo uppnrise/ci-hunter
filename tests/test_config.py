@@ -30,3 +30,27 @@ branch: feature-1
         commit="abc123",
         branch="feature-1",
     )
+
+
+def test_load_config_boolean_strings_are_parsed():
+    config = load_config_from_text(
+        """
+dry_run: "false"
+"""
+    )
+
+    assert config.dry_run is False
+
+
+def load_config_from_text(text: str) -> AppConfig:
+    path = _write_config(text)
+    return load_config(path)
+
+
+def _write_config(text: str):
+    import tempfile
+    from pathlib import Path
+
+    temp = tempfile.NamedTemporaryFile(delete=False, suffix=".yml")
+    Path(temp.name).write_text(text)
+    return temp.name

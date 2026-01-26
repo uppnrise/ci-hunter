@@ -67,4 +67,13 @@ def _get_int(data: dict[str, Any], key: str) -> Optional[int]:
 def _get_bool(data: dict[str, Any], key: str) -> Optional[bool]:
     if key not in data or data[key] is None:
         return None
-    return bool(data[key])
+    value = data[key]
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "yes", "1", "on"}:
+            return True
+        if normalized in {"false", "no", "0", "off"}:
+            return False
+    raise ValueError(f"Invalid boolean value for {key}: {value!r}")
