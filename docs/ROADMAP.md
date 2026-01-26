@@ -9,6 +9,7 @@
 5) Run duration extraction helper
 6) Markdown regression report rendering
 7) JSON regression report rendering
+8) GitHub PR comment posting helper
 
 ## Planned
 
