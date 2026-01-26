@@ -6,8 +6,10 @@ from typing import Callable, Mapping, TextIO
 
 from ci_hunter.detection import BASELINE_STRATEGY_MEDIAN
 from ci_hunter.github.auth import GitHubAppAuth
+from ci_hunter.github.artifacts import fetch_junit_durations_from_artifacts
 from ci_hunter.github.client import GitHubActionsClient
 from ci_hunter.github.comments import post_pr_comment
+from ci_hunter.github.logs import fetch_run_step_durations
 from ci_hunter.runner import fetch_store_analyze
 from ci_hunter.report import render_json_report, render_markdown_report
 from ci_hunter.storage import Storage, StorageConfig
@@ -15,6 +17,7 @@ from ci_hunter.storage import Storage, StorageConfig
 
 DEFAULT_MIN_DELTA_PCT = 0.2
 DEFAULT_DB = ":memory:"
+DEFAULT_TIMINGS_RUN_LIMIT = 10
 FORMAT_MARKDOWN = "md"
 FORMAT_JSON = "json"
 
@@ -25,6 +28,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--min-delta-pct", type=float, default=DEFAULT_MIN_DELTA_PCT)
     parser.add_argument("--baseline-strategy", default=BASELINE_STRATEGY_MEDIAN)
     parser.add_argument("--db", default=DEFAULT_DB)
+    parser.add_argument("--timings-run-limit", type=int, default=DEFAULT_TIMINGS_RUN_LIMIT)
     parser.add_argument("--pr-number", type=int)
     parser.add_argument("--format", choices=[FORMAT_MARKDOWN, FORMAT_JSON], default=FORMAT_MARKDOWN)
     parser.add_argument("--dry-run", action="store_true")
@@ -66,6 +70,9 @@ def main(
         repo=args.repo,
         min_delta_pct=args.min_delta_pct,
         baseline_strategy=args.baseline_strategy,
+        timings_run_limit=args.timings_run_limit,
+        step_fetcher=fetch_run_step_durations,
+        test_fetcher=fetch_junit_durations_from_artifacts,
     )
     if args.format == FORMAT_JSON:
         report = json_renderer(result)

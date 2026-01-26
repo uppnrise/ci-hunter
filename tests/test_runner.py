@@ -2,7 +2,9 @@ from dataclasses import dataclass
 
 from ci_hunter.detection import BASELINE_STRATEGY_MEDIAN
 from ci_hunter.github.client import WorkflowRun
+from ci_hunter.junit import TestDuration
 from ci_hunter.runner import fetch_store_analyze
+from ci_hunter.steps import StepDuration
 from ci_hunter.storage import Storage, StorageConfig
 
 REPO = "acme/repo"
@@ -20,6 +22,10 @@ UPDATED_AT_BASELINE = "2024-01-01T00:00:10Z"
 UPDATED_AT_CURRENT = "2024-01-01T00:00:20Z"
 HEAD_SHA_BASELINE = "abc123"
 HEAD_SHA_CURRENT = "def456"
+RUN_ID_THIRD = 3
+RUN_NUMBER_THIRD = 3
+UPDATED_AT_THIRD = "2024-01-01T00:00:30Z"
+HEAD_SHA_THIRD = "ghi789"
 
 
 @dataclass(frozen=True)
@@ -84,3 +90,128 @@ def test_fetch_store_analyze_wires_components():
     assert result.repo == REPO
     assert result.reason is None
     assert len(result.regressions) == 1
+
+
+def test_fetch_store_analyze_fetches_step_and_test_durations():
+    storage = Storage(StorageConfig(database_url=":memory:"))
+    runs = [
+        WorkflowRun(
+            id=RUN_ID_BASELINE,
+            run_number=RUN_NUMBER_BASELINE,
+            status=STATUS_COMPLETED,
+            conclusion=CONCLUSION_SUCCESS,
+            created_at=CREATED_AT,
+            updated_at=UPDATED_AT_BASELINE,
+            head_sha=HEAD_SHA_BASELINE,
+        ),
+        WorkflowRun(
+            id=RUN_ID_CURRENT,
+            run_number=RUN_NUMBER_CURRENT,
+            status=STATUS_COMPLETED,
+            conclusion=CONCLUSION_SUCCESS,
+            created_at=CREATED_AT,
+            updated_at=UPDATED_AT_CURRENT,
+            head_sha=HEAD_SHA_CURRENT,
+        ),
+        WorkflowRun(
+            id=RUN_ID_THIRD,
+            run_number=RUN_NUMBER_THIRD,
+            status=STATUS_COMPLETED,
+            conclusion=CONCLUSION_SUCCESS,
+            created_at=CREATED_AT,
+            updated_at=UPDATED_AT_THIRD,
+            head_sha=HEAD_SHA_THIRD,
+        ),
+    ]
+
+    def client_factory(token: str) -> DummyClient:
+        return DummyClient(runs)
+
+    step_calls: list[int] = []
+    test_calls: list[int] = []
+
+    def step_fetcher(token: str, repo: str, run_id: int) -> list[StepDuration]:
+        step_calls.append(run_id)
+        return [StepDuration(name="Checkout", duration_seconds=float(run_id))]
+
+    def test_fetcher(token: str, repo: str, run_id: int) -> list[TestDuration]:
+        test_calls.append(run_id)
+        return [TestDuration(name="tests.test_alpha", duration_seconds=float(run_id))]
+
+    fetch_store_analyze(
+        auth=DummyAuth(),
+        client_factory=client_factory,
+        storage=storage,
+        repo=REPO,
+        min_delta_pct=MIN_DELTA_PCT,
+        baseline_strategy=BASELINE_STRATEGY_MEDIAN,
+        step_fetcher=step_fetcher,
+        test_fetcher=test_fetcher,
+        timings_run_limit=2,
+    )
+
+    assert step_calls == [RUN_ID_CURRENT, RUN_ID_THIRD]
+    assert test_calls == [RUN_ID_CURRENT, RUN_ID_THIRD]
+    assert [sample.run_number for sample in storage.list_step_durations(REPO)] == [
+        RUN_NUMBER_CURRENT,
+        RUN_NUMBER_THIRD,
+    ]
+    assert [sample.run_number for sample in storage.list_test_durations(REPO)] == [
+        RUN_NUMBER_CURRENT,
+        RUN_NUMBER_THIRD,
+    ]
+
+
+def test_fetch_store_analyze_skips_missing_timings():
+    storage = Storage(StorageConfig(database_url=":memory:"))
+    runs = [
+        WorkflowRun(
+            id=RUN_ID_BASELINE,
+            run_number=RUN_NUMBER_BASELINE,
+            status=STATUS_COMPLETED,
+            conclusion=CONCLUSION_SUCCESS,
+            created_at=CREATED_AT,
+            updated_at=UPDATED_AT_BASELINE,
+            head_sha=HEAD_SHA_BASELINE,
+        ),
+        WorkflowRun(
+            id=RUN_ID_CURRENT,
+            run_number=RUN_NUMBER_CURRENT,
+            status=STATUS_COMPLETED,
+            conclusion=CONCLUSION_SUCCESS,
+            created_at=CREATED_AT,
+            updated_at=UPDATED_AT_CURRENT,
+            head_sha=HEAD_SHA_CURRENT,
+        ),
+    ]
+
+    def client_factory(token: str) -> DummyClient:
+        return DummyClient(runs)
+
+    def step_fetcher(token: str, repo: str, run_id: int) -> list[StepDuration]:
+        if run_id == RUN_ID_BASELINE:
+            raise RuntimeError("log missing")
+        return [StepDuration(name="Checkout", duration_seconds=5.0)]
+
+    def test_fetcher(token: str, repo: str, run_id: int) -> list[TestDuration]:
+        if run_id == RUN_ID_BASELINE:
+            raise RuntimeError("artifact missing")
+        return [TestDuration(name="tests.test_alpha", duration_seconds=1.0)]
+
+    fetch_store_analyze(
+        auth=DummyAuth(),
+        client_factory=client_factory,
+        storage=storage,
+        repo=REPO,
+        min_delta_pct=MIN_DELTA_PCT,
+        baseline_strategy=BASELINE_STRATEGY_MEDIAN,
+        step_fetcher=step_fetcher,
+        test_fetcher=test_fetcher,
+    )
+
+    assert [sample.run_number for sample in storage.list_step_durations(REPO)] == [
+        RUN_NUMBER_CURRENT,
+    ]
+    assert [sample.run_number for sample in storage.list_test_durations(REPO)] == [
+        RUN_NUMBER_CURRENT,
+    ]

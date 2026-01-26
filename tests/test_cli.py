@@ -33,10 +33,28 @@ def test_cli_dry_run_outputs_report():
 
     def runner(**kwargs):
         captured.update(kwargs)
-        return AnalysisResult(repo=REPO, regressions=[], reason=None)
+        return AnalysisResult(
+            repo=REPO,
+            regressions=[],
+            reason=None,
+            step_regressions=[],
+            test_regressions=[],
+            step_reason=None,
+            test_reason=None,
+            step_data_missing=False,
+            test_data_missing=False,
+        )
 
     exit_code = main(
-        ["--repo", REPO, "--min-delta-pct", str(MIN_DELTA_PCT), "--dry-run"],
+        [
+            "--repo",
+            REPO,
+            "--min-delta-pct",
+            str(MIN_DELTA_PCT),
+            "--timings-run-limit",
+            "5",
+            "--dry-run",
+        ],
         env=env,
         runner=runner,
         auth_factory=lambda _env: DummyAuth(),
@@ -49,6 +67,9 @@ def test_cli_dry_run_outputs_report():
     assert captured["repo"] == REPO
     assert captured["min_delta_pct"] == MIN_DELTA_PCT
     assert captured["baseline_strategy"] == BASELINE_STRATEGY_MEDIAN
+    assert captured["timings_run_limit"] == 5
+    assert callable(captured["step_fetcher"])
+    assert callable(captured["test_fetcher"])
 
 
 def test_cli_posts_comment_when_pr_number_set():
@@ -60,7 +81,17 @@ def test_cli_posts_comment_when_pr_number_set():
     posted = {}
 
     def runner(**kwargs):
-        return AnalysisResult(repo=REPO, regressions=[], reason=None)
+        return AnalysisResult(
+            repo=REPO,
+            regressions=[],
+            reason=None,
+            step_regressions=[],
+            test_regressions=[],
+            step_reason=None,
+            test_reason=None,
+            step_data_missing=False,
+            test_data_missing=False,
+        )
 
     def comment_poster(token: str, repo: str, pr_number: int, body: str) -> int:
         posted.update(
