@@ -38,6 +38,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--format", choices=[FORMAT_MARKDOWN, FORMAT_JSON], default=None)
     parser.add_argument("--dry-run", action="store_true", default=None)
     parser.add_argument("--output-file")
+    parser.add_argument("--no-comment", action="store_true", default=None)
     return parser
 
 
@@ -93,6 +94,9 @@ def main(
     if args.dry_run:
         _write_report(report, args.output_file, out)
         return 0
+    if args.no_comment:
+        _write_report(report, args.output_file, out)
+        return 0
 
     pr_number = args.pr_number
     token = auth.get_installation_token().token
@@ -127,6 +131,7 @@ def _merge_config(args: argparse.Namespace, config: AppConfig) -> argparse.Names
     _apply_if_missing(merged, "commit", config.commit)
     _apply_if_missing(merged, "branch", config.branch)
     _apply_if_missing(merged, "output_file", getattr(config, "output_file", None))
+    _apply_if_missing(merged, "no_comment", getattr(config, "no_comment", None))
     return merged
 
 
@@ -155,13 +160,15 @@ def _apply_defaults(args: argparse.Namespace) -> None:
         args.format = FORMAT_MARKDOWN
     if args.dry_run is None:
         args.dry_run = False
+    if args.no_comment is None:
+        args.no_comment = False
 
 
 def _write_report(report: str, output_file: str | None, out: TextIO) -> None:
+    if not report.endswith("\n"):
+        report = f"{report}\n"
     if output_file:
         with open(output_file, "w", encoding="utf-8") as handle:
             handle.write(report)
         return
     out.write(report)
-    if not report.endswith("\n"):
-        out.write("\n")

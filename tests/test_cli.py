@@ -347,4 +347,55 @@ def test_cli_writes_report_to_output_file(tmp_path):
     )
 
     assert exit_code == 0
-    assert output_path.read_text() == "report body"
+    assert output_path.read_text() == "report body\n"
+
+
+def test_cli_no_comment_skips_posting(tmp_path):
+    env = {
+        "GITHUB_APP_ID": "123",
+        "GITHUB_INSTALLATION_ID": "456",
+        "GITHUB_PRIVATE_KEY_PEM": "test-key",
+    }
+    output_path = tmp_path / "report.md"
+    posted = {}
+
+    def runner(**kwargs):
+        return AnalysisResult(
+            repo=REPO,
+            regressions=[],
+            reason=None,
+            step_regressions=[],
+            test_regressions=[],
+            step_reason=None,
+            test_reason=None,
+            step_timings_attempted=0,
+            step_timings_failed=0,
+            test_timings_attempted=0,
+            test_timings_failed=0,
+        )
+
+    def comment_poster(token: str, repo: str, pr_number: int, body: str) -> int:
+        posted.update({"token": token, "repo": repo, "pr_number": pr_number})
+        return 1
+
+    exit_code = main(
+        [
+            "--repo",
+            REPO,
+            "--pr-number",
+            str(PR_NUMBER),
+            "--output-file",
+            str(output_path),
+            "--no-comment",
+        ],
+        env=env,
+        runner=runner,
+        auth_factory=lambda _env: DummyAuth(),
+        markdown_renderer=lambda _: "report body",
+        comment_poster=comment_poster,
+        out=io.StringIO(),
+    )
+
+    assert exit_code == 0
+    assert output_path.read_text() == "report body\n"
+    assert posted == {}
