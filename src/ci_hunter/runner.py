@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import Callable
 
 from ci_hunter.analyze import AnalysisResult, analyze_repo_runs
@@ -9,6 +10,7 @@ from ci_hunter.storage import Storage
 from ci_hunter.steps import StepDuration
 from ci_hunter.junit import TestDuration
 
+logger = logging.getLogger(__name__)
 
 def fetch_store_analyze(
     *,
@@ -85,18 +87,42 @@ def _fetch_and_store_timings(
             stats.step_attempted += 1
             try:
                 durations = step_fetcher(token, repo, run.id)
+                if durations:
+                    storage.save_step_durations(repo, run.id, durations)
+                else:
+                    stats.step_failed += 1
+                    logger.info(
+                        "Step timings missing for repo=%s run_id=%s",
+                        repo,
+                        run.id,
+                    )
             except Exception:
                 stats.step_failed += 1
-                durations = []
-            if durations:
-                storage.save_step_durations(repo, run.id, durations)
+                logger.warning(
+                    "Step timings fetch failed for repo=%s run_id=%s",
+                    repo,
+                    run.id,
+                    exc_info=True,
+                )
         if test_fetcher is not None:
             stats.test_attempted += 1
             try:
                 durations = test_fetcher(token, repo, run.id)
+                if durations:
+                    storage.save_test_durations(repo, run.id, durations)
+                else:
+                    stats.test_failed += 1
+                    logger.info(
+                        "Test timings missing for repo=%s run_id=%s",
+                        repo,
+                        run.id,
+                    )
             except Exception:
                 stats.test_failed += 1
-                durations = []
-            if durations:
-                storage.save_test_durations(repo, run.id, durations)
+                logger.warning(
+                    "Test timings fetch failed for repo=%s run_id=%s",
+                    repo,
+                    run.id,
+                    exc_info=True,
+                )
     return stats

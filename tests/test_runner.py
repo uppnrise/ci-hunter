@@ -219,3 +219,43 @@ def test_fetch_store_analyze_skips_missing_timings():
     assert result.step_timings_failed == 1
     assert result.test_timings_attempted == 2
     assert result.test_timings_failed == 1
+
+
+def test_fetch_store_analyze_counts_empty_timings_as_missing():
+    storage = Storage(StorageConfig(database_url=":memory:"))
+    runs = [
+        WorkflowRun(
+            id=RUN_ID_BASELINE,
+            run_number=RUN_NUMBER_BASELINE,
+            status=STATUS_COMPLETED,
+            conclusion=CONCLUSION_SUCCESS,
+            created_at=CREATED_AT,
+            updated_at=UPDATED_AT_BASELINE,
+            head_sha=HEAD_SHA_BASELINE,
+        ),
+    ]
+
+    def client_factory(token: str) -> DummyClient:
+        return DummyClient(runs)
+
+    def step_fetcher(token: str, repo: str, run_id: int) -> list[StepDuration]:
+        return []
+
+    def test_fetcher(token: str, repo: str, run_id: int) -> list[TestDuration]:
+        return []
+
+    result = fetch_store_analyze(
+        auth=DummyAuth(),
+        client_factory=client_factory,
+        storage=storage,
+        repo=REPO,
+        min_delta_pct=MIN_DELTA_PCT,
+        baseline_strategy=BASELINE_STRATEGY_MEDIAN,
+        step_fetcher=step_fetcher,
+        test_fetcher=test_fetcher,
+    )
+
+    assert result.step_timings_attempted == 1
+    assert result.step_timings_failed == 1
+    assert result.test_timings_attempted == 1
+    assert result.test_timings_failed == 1
