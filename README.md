@@ -6,7 +6,7 @@ CI Hunter is a small Python codebase for detecting CI run slowdowns. It currentl
 - parses step timings and JUnit test durations (for recent runs),
 - stores runs in SQLite,
 - computes run-duration regressions with configurable baselines,
-- renders markdown/JSON reports and can post PR comments.
+- renders markdown/JSON reports (with per-run/step/test sections and missing-data counts) and can post PR comments.
 
 This repo is early-stage but includes a packaged console script (`ci-hunter`) and a Python-level entrypoint.
 
