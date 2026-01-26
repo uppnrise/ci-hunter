@@ -67,6 +67,7 @@ The console script is installed as `ci-hunter` and wraps `ci_hunter.cli.main`. I
 - `--db`
 - `--timings-run-limit`
 - `--commit` or `--branch` (for PR inference when `--pr-number` is omitted)
+- `--config` (YAML config file)
 - `--format {md,json}`
 - `--dry-run`
 
