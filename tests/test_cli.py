@@ -187,3 +187,64 @@ def test_cli_infers_pr_number_when_missing():
 
     assert exit_code == 0
     assert posted["pr_number"] == inferred["number"]
+
+
+def test_cli_merges_config_with_cli_overrides(tmp_path):
+    config_path = tmp_path / "config.yml"
+    config_path.write_text(
+        """
+repo: acme/from-config
+min_delta_pct: 0.9
+baseline_strategy: mean
+db: "config.db"
+timings_run_limit: 3
+format: json
+dry_run: false
+"""
+    )
+
+    env = {
+        "GITHUB_APP_ID": "123",
+        "GITHUB_INSTALLATION_ID": "456",
+        "GITHUB_PRIVATE_KEY_PEM": "test-key",
+    }
+    captured = {}
+
+    def runner(**kwargs):
+        captured.update(kwargs)
+        return AnalysisResult(
+            repo="acme/from-config",
+            regressions=[],
+            reason=None,
+            step_regressions=[],
+            test_regressions=[],
+            step_reason=None,
+            test_reason=None,
+            step_timings_attempted=0,
+            step_timings_failed=0,
+            test_timings_attempted=0,
+            test_timings_failed=0,
+        )
+
+    exit_code = main(
+        [
+            "--config",
+            str(config_path),
+            "--repo",
+            REPO,
+            "--min-delta-pct",
+            str(MIN_DELTA_PCT),
+            "--dry-run",
+        ],
+        env=env,
+        runner=runner,
+        auth_factory=lambda _env: DummyAuth(),
+        markdown_renderer=lambda _: "report",
+        out=io.StringIO(),
+    )
+
+    assert exit_code == 0
+    assert captured["repo"] == REPO
+    assert captured["min_delta_pct"] == MIN_DELTA_PCT
+    assert captured["baseline_strategy"] == "mean"
+    assert captured["timings_run_limit"] == 3

@@ -4,6 +4,7 @@ import argparse
 import os
 from typing import Callable, Mapping, TextIO
 
+from ci_hunter.config import AppConfig, load_config
 from ci_hunter.detection import BASELINE_STRATEGY_MEDIAN
 from ci_hunter.github.auth import GitHubAppAuth
 from ci_hunter.github.artifacts import fetch_junit_durations_from_artifacts
@@ -25,16 +26,17 @@ FORMAT_JSON = "json"
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="ci-hunter")
-    parser.add_argument("--repo", required=True)
-    parser.add_argument("--min-delta-pct", type=float, default=DEFAULT_MIN_DELTA_PCT)
-    parser.add_argument("--baseline-strategy", default=BASELINE_STRATEGY_MEDIAN)
-    parser.add_argument("--db", default=DEFAULT_DB)
-    parser.add_argument("--timings-run-limit", type=int, default=DEFAULT_TIMINGS_RUN_LIMIT)
+    parser.add_argument("--config")
+    parser.add_argument("--repo")
+    parser.add_argument("--min-delta-pct", type=float, default=None)
+    parser.add_argument("--baseline-strategy", default=None)
+    parser.add_argument("--db", default=None)
+    parser.add_argument("--timings-run-limit", type=int, default=None)
     parser.add_argument("--pr-number", type=int)
     parser.add_argument("--commit")
     parser.add_argument("--branch")
-    parser.add_argument("--format", choices=[FORMAT_MARKDOWN, FORMAT_JSON], default=FORMAT_MARKDOWN)
-    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--format", choices=[FORMAT_MARKDOWN, FORMAT_JSON], default=None)
+    parser.add_argument("--dry-run", action="store_true", default=None)
     return parser
 
 
@@ -54,6 +56,10 @@ def main(
     args = parser.parse_args(argv)
     env = os.environ if env is None else env
     out = out or os.sys.stdout
+
+    config = _load_optional_config(args.config)
+    args = _merge_config(args, config)
+    _apply_defaults(args)
 
     auth_factory = auth_factory or (lambda e: GitHubAppAuth(
         app_id=e["GITHUB_APP_ID"],
@@ -100,3 +106,51 @@ def main(
     token = auth.get_installation_token().token
     comment_poster(token, args.repo, pr_number, report)
     return 0
+
+
+def _load_optional_config(path: str | None) -> AppConfig:
+    if not path:
+        return AppConfig()
+    return load_config(path)
+
+
+def _merge_config(args: argparse.Namespace, config: AppConfig) -> argparse.Namespace:
+    merged = argparse.Namespace(**vars(args))
+    _apply_if_missing(merged, "repo", config.repo)
+    _apply_if_missing(merged, "min_delta_pct", config.min_delta_pct)
+    _apply_if_missing(merged, "baseline_strategy", config.baseline_strategy)
+    _apply_if_missing(merged, "db", config.db)
+    _apply_if_missing(merged, "timings_run_limit", config.timings_run_limit)
+    _apply_if_missing(merged, "format", config.format)
+    _apply_if_missing(merged, "dry_run", config.dry_run)
+    _apply_if_missing(merged, "pr_number", config.pr_number)
+    _apply_if_missing(merged, "commit", config.commit)
+    _apply_if_missing(merged, "branch", config.branch)
+    return merged
+
+
+def _apply_if_missing(args: argparse.Namespace, key: str, value: object | None) -> None:
+    if value is None:
+        return
+    current = getattr(args, key)
+    if current is None:
+        setattr(args, key, value)
+    elif isinstance(current, bool) and current is False:
+        setattr(args, key, value)
+
+
+def _apply_defaults(args: argparse.Namespace) -> None:
+    if args.repo is None:
+        raise ValueError("--repo is required")
+    if args.min_delta_pct is None:
+        args.min_delta_pct = DEFAULT_MIN_DELTA_PCT
+    if args.baseline_strategy is None:
+        args.baseline_strategy = BASELINE_STRATEGY_MEDIAN
+    if args.db is None:
+        args.db = DEFAULT_DB
+    if args.timings_run_limit is None:
+        args.timings_run_limit = DEFAULT_TIMINGS_RUN_LIMIT
+    if args.format is None:
+        args.format = FORMAT_MARKDOWN
+    if args.dry_run is None:
+        args.dry_run = False
