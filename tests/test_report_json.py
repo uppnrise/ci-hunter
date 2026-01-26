@@ -17,6 +17,26 @@ def test_render_json_report():
             )
         ],
         reason=None,
+        step_regressions=[
+            Regression(
+                metric="Checkout",
+                baseline=5.0,
+                current=10.0,
+                delta_pct=1.0,
+            )
+        ],
+        test_regressions=[
+            Regression(
+                metric="tests.test_alpha",
+                baseline=1.0,
+                current=2.0,
+                delta_pct=1.0,
+            )
+        ],
+        step_reason=None,
+        test_reason=None,
+        step_data_missing=True,
+        test_data_missing=True,
     )
 
     report = render_json_report(result)
@@ -25,3 +45,7 @@ def test_render_json_report():
     assert payload["repo"] == "acme/repo"
     assert payload["regressions"][0]["metric"] == "run_duration_seconds"
     assert payload["regressions"][0]["delta_pct"] == 0.5
+    assert payload["step_regressions"][0]["metric"] == "Checkout"
+    assert payload["test_regressions"][0]["metric"] == "tests.test_alpha"
+    assert payload["step_data_missing"] is True
+    assert payload["test_data_missing"] is True
