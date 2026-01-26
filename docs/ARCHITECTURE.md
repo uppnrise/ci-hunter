@@ -1,6 +1,15 @@
 # CI/Test Slowdown Hunter — Architecture Guide
 
-End-to-end blueprint for an agent that detects CI bottlenecks, attributes likely causes, and posts actionable remediation to developers. Built with LangGraph/LangChain for orchestration, Python for detection logic, and pluggable CI/VCS/chat backends.
+End-to-end blueprint for an agent that detects CI bottlenecks, attributes likely causes, and posts actionable remediation to developers. This document includes **target architecture** ideas that are not implemented yet.
+
+## Status (Current Implementation)
+- GitHub Actions client + GitHub App auth
+- SQLite storage for workflow runs
+- Run-duration regression detection (configurable baselines)
+- Step timing parsing from run logs
+- JUnit test duration parsing from artifacts
+- Markdown/JSON report rendering
+- CLI that can dry-run to stdout or post PR comments
 
 ## 0) Scope and Modes
 - **Use cases**: PR regression commenting, scheduled branch monitoring, ChatOps queries, local dry-runs.
@@ -76,7 +85,7 @@ End-to-end blueprint for an agent that detects CI bottlenecks, attributes likely
 - **GitHub**: PAT or GitHub App; APIs for runs, logs, artifacts, comments; check-run optional.
 - **GitLab**: similar shape; abstract via provider interface.
 - **Chat**: Slack/Teams via webhook; formatter for bullets and links.
-- **CLI**: `ci-hunter analyze --pr 123 --since 20` outputs markdown/JSON for local validation.
+- **CLI**: `ci-hunter --repo org/repo --pr-number 123 --format md` outputs markdown for local validation.
 
 ## 8) Deployment Topologies
 - **GitHub App mode**: receives webhooks (check_suite, pull_request); runs analyzer; posts comment.
@@ -141,7 +150,7 @@ labels:
 5. Add optional LLM explainer/remediator; prompt templates; token logging.
 
 ## 15) Developer Experience
-- **Local loop**: `poetry run ci-hunter analyze --pr 123 --since 20 --dry-run` to view markdown.
+- **Local loop**: `ci-hunter --repo org/repo --dry-run --format md` to view markdown.
 - **Config-first**: single YAML; env-var overrides.
 - **Docs**: quickstart, provider setup, config reference, prompt tuning.
 - **Safeguards**: “no regressions found” message; respect disable labels; bounded outputs.

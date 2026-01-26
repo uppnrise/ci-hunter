@@ -2,11 +2,14 @@
 
 CI Hunter is a small Python codebase for detecting CI run slowdowns. It currently:
 
-- fetches GitHub Actions workflow runs (via an installation token you provide),
+- fetches GitHub Actions workflow runs (via a GitHub App installation token),
 - stores runs in SQLite,
-- computes run-duration regressions with a simple baseline strategy.
+- computes run-duration regressions with configurable baselines,
+- renders markdown/JSON reports and can post PR comments.
 
-This repo is early-stage and has a minimal CLI entrypoint (Python-level) but no packaged console script yet.
+Additional helpers exist for step timing parsing and JUnit artifact parsing, but they are not yet wired into the CLI flow.
+
+This repo is early-stage but includes a packaged console script (`ci-hunter`) and a Python-level entrypoint.
 
 ## Requirements
 
@@ -54,16 +57,29 @@ result = analyze_repo_runs(
 print(result)
 ```
 
-## CLI (current)
+## CLI
 
-There is a Python-level CLI entrypoint in `ci_hunter.cli.main`. It supports:
+The console script is installed as `ci-hunter` and wraps `ci_hunter.cli.main`. It supports:
 
 - `--repo` (required)
 - `--pr-number` (required unless `--dry-run` is set)
+- `--min-delta-pct`
+- `--baseline-strategy`
+- `--db`
 - `--format {md,json}`
 - `--dry-run`
 
-Example (dry-run to stdout):
+Examples:
+
+```bash
+# Dry-run to stdout
+ci-hunter --repo owner/repo --dry-run --format md
+
+# Post a PR comment
+ci-hunter --repo owner/repo --pr-number 123 --format md
+```
+
+Python-level invocation remains available:
 
 ```python
 from ci_hunter.cli import main
@@ -74,6 +90,7 @@ main(["--repo", "owner/repo", "--dry-run", "--format", "md"])
 ## Tests
 
 ```bash
+pip install -e ".[dev]"
 pytest -q
 ```
 
