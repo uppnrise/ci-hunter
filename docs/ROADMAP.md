@@ -10,7 +10,8 @@
 6) Markdown regression report rendering
 7) JSON regression report rendering
 8) GitHub PR comment posting helper
+9) CLI end-to-end flow with dry-run and PR posting
 
 ## Planned
 
-1) Optional delivery to GitHub PR comments
+1) Infer PR from branch/commit

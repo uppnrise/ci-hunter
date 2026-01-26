@@ -6,7 +6,7 @@ CI Hunter is a small Python codebase for detecting CI run slowdowns. It currentl
 - stores runs in SQLite,
 - computes run-duration regressions with a simple baseline strategy.
 
-This repo is early-stage and has no CLI yet.
+This repo is early-stage and has a minimal CLI entrypoint (Python-level) but no packaged console script yet.
 
 ## Requirements
 
@@ -52,6 +52,23 @@ result = analyze_repo_runs(
     min_delta_pct=DEFAULT_MIN_DELTA_PCT,
 )
 print(result)
+```
+
+## CLI (current)
+
+There is a Python-level CLI entrypoint in `ci_hunter.cli.main`. It supports:
+
+- `--repo` (required)
+- `--pr-number` (required unless `--dry-run` is set)
+- `--format {md,json}`
+- `--dry-run`
+
+Example (dry-run to stdout):
+
+```python
+from ci_hunter.cli import main
+
+main(["--repo", "owner/repo", "--dry-run", "--format", "md"])
 ```
 
 ## Tests

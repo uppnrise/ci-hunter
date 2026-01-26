@@ -8,5 +8,8 @@ Current parameters:
 - `GitHubActionsClient(token=...)` expects that installation token.
 - `analyze_repo_runs(..., min_delta_pct=..., baseline_strategy=...)`
   - `baseline_strategy` accepted values: `median`, `mean`, `trimmed_mean`
+- CLI (ci_hunter.cli.main) uses:
+  - `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, `GITHUB_PRIVATE_KEY_PEM`
+  - `--repo`, `--pr-number` (unless `--dry-run`), `--format {md,json}`, `--dry-run`
 
 Once a config system is added, this file will list the supported env vars and YAML keys.
