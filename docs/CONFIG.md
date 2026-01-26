@@ -14,3 +14,8 @@ Current parameters:
   - `--format {md,json}`, `--dry-run`
 
 Once a config system is added, this file will list the supported env vars and YAML keys.
+
+Notes:
+- Step timings are prefixed with the job log filename (e.g., `build/Checkout`).
+- JSON reports include timing fetch counts: `step_timings_attempted`, `step_timings_failed`,
+  `test_timings_attempted`, `test_timings_failed`.
