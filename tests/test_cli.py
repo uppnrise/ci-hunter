@@ -189,6 +189,64 @@ def test_cli_infers_pr_number_when_missing():
     assert posted["pr_number"] == inferred["number"]
 
 
+def test_cli_reuses_installation_token_for_inference_and_comment():
+    env = {
+        "GITHUB_APP_ID": "123",
+        "GITHUB_INSTALLATION_ID": "456",
+        "GITHUB_PRIVATE_KEY_PEM": "test-key",
+    }
+    calls = {"count": 0}
+    posted = {}
+
+    @dataclass(frozen=True)
+    class CountingAuth:
+        def get_installation_token(self) -> InstallationToken:
+            calls["count"] += 1
+            return InstallationToken(token=TOKEN, expires_at="2024-01-01T00:10:00Z")
+
+    def runner(**kwargs):
+        return AnalysisResult(
+            repo=REPO,
+            regressions=[],
+            reason=None,
+            step_regressions=[],
+            test_regressions=[],
+            step_reason=None,
+            test_reason=None,
+            step_timings_attempted=0,
+            step_timings_failed=0,
+            test_timings_attempted=0,
+            test_timings_failed=0,
+        )
+
+    def pr_infer(*, token: str, repo: str, commit: str | None, branch: str | None):
+        assert token == TOKEN
+        return type("Inferred", (), {"number": PR_NUMBER, "multiple_matches": False})()
+
+    def comment_poster(token: str, repo: str, pr_number: int, body: str) -> int:
+        posted.update({"token": token, "repo": repo, "pr_number": pr_number})
+        return 1
+
+    exit_code = main(
+        [
+            "--repo",
+            REPO,
+            "--commit",
+            "abc123",
+        ],
+        env=env,
+        runner=runner,
+        auth_factory=lambda _env: CountingAuth(),
+        pr_infer=pr_infer,
+        markdown_renderer=lambda _: "comment body",
+        comment_poster=comment_poster,
+    )
+
+    assert exit_code == 0
+    assert calls["count"] == 1
+    assert posted["token"] == TOKEN
+
+
 def test_cli_merges_config_with_cli_overrides(tmp_path):
     config_path = tmp_path / "config.yml"
     config_path.write_text(

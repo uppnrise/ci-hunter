@@ -96,14 +96,14 @@ def main(
         return 0
 
     pr_number = args.pr_number
+    token = auth.get_installation_token().token
     if pr_number is None:
-        inferred = pr_infer(token=auth.get_installation_token().token, repo=args.repo, commit=args.commit, branch=args.branch)
+        inferred = pr_infer(token=token, repo=args.repo, commit=args.commit, branch=args.branch)
         if inferred is not None:
             pr_number = inferred.number
         else:
             raise ValueError("--pr-number is required unless --dry-run is set")
 
-    token = auth.get_installation_token().token
     comment_poster(token, args.repo, pr_number, report)
     return 0
 
