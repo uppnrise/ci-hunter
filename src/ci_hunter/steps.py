@@ -24,6 +24,7 @@ def parse_step_durations(log_text: str) -> List[StepDuration]:
     the substring "Step:" followed by the step name.
     """
     steps: list[tuple[str, datetime]] = []
+    last_timestamp: datetime | None = None
     for line in log_text.splitlines():
         line = line.strip()
         if not line:
@@ -32,6 +33,7 @@ def parse_step_durations(log_text: str) -> List[StepDuration]:
         if not match:
             continue
         timestamp = _parse_iso_datetime(match.group("ts"))
+        last_timestamp = timestamp
         rest = match.group("rest")
         if STEP_PREFIX in rest:
             name = rest.split(STEP_PREFIX, 1)[1].strip()
@@ -45,6 +47,15 @@ def parse_step_durations(log_text: str) -> List[StepDuration]:
                 duration_seconds=(end - start).total_seconds(),
             )
         )
+    if steps and last_timestamp is not None:
+        name, start = steps[-1]
+        if last_timestamp > start:
+            durations.append(
+                StepDuration(
+                    name=name,
+                    duration_seconds=(last_timestamp - start).total_seconds(),
+                )
+            )
     return durations
 
 

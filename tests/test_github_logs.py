@@ -34,8 +34,9 @@ def test_fetch_run_step_durations_from_logs_zip():
 2024-01-01T00:00:05.0000000Z  Step: Checkout
 2024-01-01T00:00:15.0000000Z  Step: Install deps
 2024-01-01T00:00:40.0000000Z  Step: Run tests
+2024-01-01T00:01:00.0000000Z  [command] echo "Done"
 """
-    zip_bytes = _make_zip_bytes("logs/1_job.txt", log_text)
+    zip_bytes = _make_zip_bytes("logs/build_job.txt", log_text)
 
     route = respx.get(
         f"{DEFAULT_BASE_URL}/repos/{REPO}/actions/runs/{RUN_ID}/logs",
@@ -56,6 +57,7 @@ def test_fetch_run_step_durations_from_logs_zip():
 
     assert route.called
     assert durations == [
-        StepDuration(name="Checkout", duration_seconds=10.0),
-        StepDuration(name="Install deps", duration_seconds=25.0),
+        StepDuration(name="build_job/Checkout", duration_seconds=10.0),
+        StepDuration(name="build_job/Install deps", duration_seconds=25.0),
+        StepDuration(name="build_job/Run tests", duration_seconds=20.0),
     ]

@@ -47,5 +47,22 @@ def _parse_zip_logs(zip_bytes: bytes) -> List[StepDuration]:
                 continue
             with zip_file.open(name) as handle:
                 text = handle.read().decode("utf-8", errors="replace")
-            durations.extend(parse_step_durations(text))
+            job_name = _derive_job_name(name)
+            durations.extend(_prefix_step_names(parse_step_durations(text), job_name))
     return durations
+
+
+def _derive_job_name(path: str) -> str:
+    name = path.rsplit("/", 1)[-1]
+    if name.lower().endswith(".txt"):
+        name = name[:-4]
+    return name
+
+
+def _prefix_step_names(steps: List[StepDuration], job_name: str) -> List[StepDuration]:
+    if not job_name:
+        return steps
+    return [
+        StepDuration(name=f"{job_name}/{step.name}", duration_seconds=step.duration_seconds)
+        for step in steps
+    ]
