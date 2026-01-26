@@ -13,7 +13,7 @@ Current parameters:
   - `--config` (YAML config file)
   - `--repo`, `--pr-number` (unless `--dry-run`), `--commit`/`--branch` (PR inference),
     `--min-delta-pct`, `--baseline-strategy`, `--db`, `--timings-run-limit`
-  - `--format {md,json}`, `--dry-run`
+  - `--format {md,json}`, `--dry-run`, `--output-file`
 
 Once a config system is added, this file will list the supported env vars and YAML keys.
 
