@@ -41,8 +41,10 @@ def test_cli_dry_run_outputs_report():
             test_regressions=[],
             step_reason=None,
             test_reason=None,
-            step_data_missing=False,
-            test_data_missing=False,
+            step_timings_attempted=0,
+            step_timings_failed=0,
+            test_timings_attempted=0,
+            test_timings_failed=0,
         )
 
     exit_code = main(
@@ -89,8 +91,10 @@ def test_cli_posts_comment_when_pr_number_set():
             test_regressions=[],
             step_reason=None,
             test_reason=None,
-            step_data_missing=False,
-            test_data_missing=False,
+            step_timings_attempted=0,
+            step_timings_failed=0,
+            test_timings_attempted=0,
+            test_timings_failed=0,
         )
 
     def comment_poster(token: str, repo: str, pr_number: int, body: str) -> int:

@@ -24,8 +24,10 @@ class AnalysisResult:
     test_regressions: list[Regression]
     step_reason: Optional[str]
     test_reason: Optional[str]
-    step_data_missing: bool
-    test_data_missing: bool
+    step_timings_attempted: Optional[int]
+    step_timings_failed: Optional[int]
+    test_timings_attempted: Optional[int]
+    test_timings_failed: Optional[int]
 
 
 def analyze_repo_runs(
@@ -66,8 +68,10 @@ def analyze_repo_runs(
         test_regressions=test_regressions.regressions,
         step_reason=step_regressions.reason,
         test_reason=test_regressions.reason,
-        step_data_missing=len(step_samples) == 0,
-        test_data_missing=len(test_samples) == 0,
+        step_timings_attempted=None,
+        step_timings_failed=None,
+        test_timings_attempted=None,
+        test_timings_failed=None,
     )
 
 
@@ -94,12 +98,6 @@ def _validate_baseline_strategy(strategy: str) -> None:
     }
     if strategy not in allowed:
         raise ValueError(f"Unknown baseline_strategy: {strategy}")
-
-
-@dataclass(frozen=True)
-class _NamedSample:
-    name: str
-    duration_seconds: float
 
 
 @dataclass(frozen=True)
@@ -145,5 +143,9 @@ def _detect_named_regressions(
                 )
             )
 
-    reason = None if regressions else REASON_INSUFFICIENT_HISTORY
-    return _NamedRegressionResult(regressions=regressions, reason=reason)
+    if regressions:
+        return _NamedRegressionResult(regressions=regressions, reason=None)
+    has_history = any(len(entries) > 1 for entries in by_name.values())
+    if has_history:
+        return _NamedRegressionResult(regressions=[], reason=None)
+    return _NamedRegressionResult(regressions=[], reason=REASON_INSUFFICIENT_HISTORY)

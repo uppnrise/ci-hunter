@@ -61,8 +61,10 @@ def test_analyze_repo_runs_detects_regression():
         test_regressions=[],
         step_reason="insufficient_history",
         test_reason="insufficient_history",
-        step_data_missing=True,
-        test_data_missing=True,
+        step_timings_attempted=None,
+        step_timings_failed=None,
+        test_timings_attempted=None,
+        test_timings_failed=None,
     )
     assert len(result.regressions) == 1
     regression = result.regressions[0]
@@ -135,5 +137,54 @@ def test_analyze_repo_runs_detects_step_and_test_regressions():
     assert test_regression.metric == "tests.test_alpha"
     assert test_regression.baseline == 1.0
     assert test_regression.current == 2.0
-    assert result.step_data_missing is False
-    assert result.test_data_missing is False
+    assert result.step_timings_attempted is None
+    assert result.step_timings_failed is None
+    assert result.test_timings_attempted is None
+    assert result.test_timings_failed is None
+
+
+def test_analyze_repo_runs_step_reason_none_when_no_regression():
+    storage = Storage(":memory:")
+    storage.save_workflow_runs(
+        REPO,
+        [
+            WorkflowRun(
+                id=RUN_ID_BASELINE,
+                run_number=RUN_NUMBER_BASELINE,
+                status=STATUS_COMPLETED,
+                conclusion=CONCLUSION_SUCCESS,
+                created_at=CREATED_AT,
+                updated_at=UPDATED_AT_BASELINE,
+                head_sha=HEAD_SHA_BASELINE,
+            ),
+            WorkflowRun(
+                id=RUN_ID_CURRENT,
+                run_number=RUN_NUMBER_CURRENT,
+                status=STATUS_COMPLETED,
+                conclusion=CONCLUSION_SUCCESS,
+                created_at=CREATED_AT,
+                updated_at=UPDATED_AT_CURRENT,
+                head_sha=HEAD_SHA_CURRENT,
+            ),
+        ],
+    )
+    storage.save_step_durations(
+        REPO,
+        RUN_ID_BASELINE,
+        [StepDuration(name="Checkout", duration_seconds=5.0)],
+    )
+    storage.save_step_durations(
+        REPO,
+        RUN_ID_CURRENT,
+        [StepDuration(name="Checkout", duration_seconds=5.4)],
+    )
+
+    result = analyze_repo_runs(
+        storage,
+        REPO,
+        min_delta_pct=1.0,
+        baseline_strategy=BASELINE_STRATEGY_MEDIAN,
+    )
+
+    assert result.step_regressions == []
+    assert result.step_reason is None
