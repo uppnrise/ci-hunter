@@ -118,6 +118,28 @@ Minimal `payload.json` example:
 }
 ```
 
+## Queue/Worker (local flow)
+
+There is now an in-process queue/worker path you can use in code to simulate a
+future webhook + worker architecture without running any server:
+
+```python
+from ci_hunter.cli import main as cli_main
+from ci_hunter.github.webhook_queue_worker import process_webhook_event_via_queue
+from ci_hunter.queue import InMemoryJobQueue
+from ci_hunter.worker import Worker
+
+queue = InMemoryJobQueue()
+worker = Worker(queue=queue, cli_main=cli_main)
+
+handled, processed = process_webhook_event_via_queue(
+    "pull_request",
+    payload,  # GitHub-style dict payload
+    queue=queue,
+    worker=worker,
+)
+```
+
 ## Tests
 
 ```bash

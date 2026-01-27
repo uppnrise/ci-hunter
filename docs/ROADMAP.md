@@ -19,6 +19,7 @@
 15) Minimal retry/backoff policy for GitHub API calls
 16) Optional output destinations (file or stdout in addition to PR comment)
 17) Webhook groundwork (pull_request parsing + CLI pipeline runner)
+18) In-process queue/worker groundwork (enqueue + worker loop)
 
 ## Planned
 
