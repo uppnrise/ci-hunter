@@ -93,6 +93,31 @@ from ci_hunter.cli import main
 main(["--repo", "owner/repo", "--dry-run", "--format", "md"])
 ```
 
+## Webhooks (local testing)
+
+There is no HTTP webhook server yet, but you can run the webhook pipeline locally by
+passing a GitHub-style payload file into the CLI bridge:
+
+```bash
+python -m ci_hunter.webhook_cmd \
+  --event pull_request \
+  --payload-file payload.json \
+  --dry-run
+```
+
+Minimal `payload.json` example:
+
+```json
+{
+  "action": "opened",
+  "repository": {"full_name": "owner/repo"},
+  "pull_request": {
+    "number": 123,
+    "head": {"sha": "abc123", "ref": "feature-branch"}
+  }
+}
+```
+
 ## Tests
 
 ```bash

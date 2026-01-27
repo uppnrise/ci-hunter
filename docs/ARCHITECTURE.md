@@ -12,6 +12,7 @@ End-to-end blueprint for an agent that detects CI bottlenecks, attributes likely
 - CLI that can dry-run to stdout, write output files, or post PR comments
 - YAML config support with CLI overrides
 - GitHub API retry/backoff for transient errors
+- Webhook groundwork: pull_request parsing and a local webhook-to-CLI pipeline
 
 ## 0) Scope and Modes
 - **Use cases**: PR regression commenting, scheduled branch monitoring, ChatOps queries, local dry-runs.
