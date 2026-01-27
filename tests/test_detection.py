@@ -1,3 +1,5 @@
+import pytest
+
 from ci_hunter.detection import (
     BASELINE_STRATEGY_MEDIAN,
     BASELINE_STRATEGY_TRIMMED_MEAN,
@@ -104,3 +106,52 @@ def test_returns_reason_when_baseline_non_positive():
     )
 
     assert result == DetectionResult(regressions=[], reason=REASON_NON_POSITIVE_BASELINE)
+
+
+def test_respects_min_history():
+    result = detect_run_duration_regressions(
+        [DURATION_BASELINE, DURATION_BASELINE, DURATION_CURRENT],
+        min_delta_pct=MIN_DELTA_PCT,
+        min_history=3,
+    )
+
+    assert result == DetectionResult(regressions=[], reason=REASON_INSUFFICIENT_HISTORY)
+
+
+def test_history_window_limits_baseline():
+    durations = [100.0, 100.0, DURATION_BASELINE, DURATION_BASELINE, DURATION_CURRENT]
+
+    result = detect_run_duration_regressions(
+        durations,
+        min_delta_pct=MIN_DELTA_PCT,
+        baseline_strategy="mean",
+        history_window=2,
+    )
+
+    assert result.regressions == [
+        Regression(
+            metric=METRIC_RUN_DURATION_SECONDS,
+            baseline=DURATION_BASELINE,
+            current=DURATION_CURRENT,
+            delta_pct=DELTA_PCT,
+        )
+    ]
+    assert result.reason is None
+
+
+def test_min_history_must_be_positive():
+    with pytest.raises(ValueError):
+        detect_run_duration_regressions(
+            [DURATION_BASELINE, DURATION_CURRENT],
+            min_delta_pct=MIN_DELTA_PCT,
+            min_history=0,
+        )
+
+
+def test_history_window_must_be_positive_when_set():
+    with pytest.raises(ValueError):
+        detect_run_duration_regressions(
+            [DURATION_BASELINE, DURATION_CURRENT],
+            min_delta_pct=MIN_DELTA_PCT,
+            history_window=0,
+        )

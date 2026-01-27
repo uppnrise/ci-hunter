@@ -10,6 +10,8 @@ min_delta_pct: 0.3
 baseline_strategy: mean
 db: ":memory:"
 timings_run_limit: 5
+min_history: 2
+history_window: 10
 format: md
 dry_run: true
 commit: abc123
@@ -25,6 +27,8 @@ branch: feature-1
         baseline_strategy="mean",
         db=":memory:",
         timings_run_limit=5,
+        min_history=2,
+        history_window=10,
         format="md",
         dry_run=True,
         commit="abc123",

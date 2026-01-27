@@ -53,6 +53,10 @@ def test_cli_dry_run_outputs_report():
             REPO,
             "--min-delta-pct",
             str(MIN_DELTA_PCT),
+            "--min-history",
+            "2",
+            "--history-window",
+            "5",
             "--timings-run-limit",
             "5",
             "--dry-run",
@@ -70,6 +74,8 @@ def test_cli_dry_run_outputs_report():
     assert captured["min_delta_pct"] == MIN_DELTA_PCT
     assert captured["baseline_strategy"] == BASELINE_STRATEGY_MEDIAN
     assert captured["timings_run_limit"] == 5
+    assert captured["min_history"] == 2
+    assert captured["history_window"] == 5
     assert callable(captured["step_fetcher"])
     assert callable(captured["test_fetcher"])
 
@@ -256,6 +262,8 @@ min_delta_pct: 0.9
 baseline_strategy: mean
 db: "ci_hunter.db"
 timings_run_limit: 3
+min_history: 4
+history_window: 8
 format: json
 dry_run: false
 """
@@ -306,6 +314,8 @@ dry_run: false
     assert captured["min_delta_pct"] == MIN_DELTA_PCT
     assert captured["baseline_strategy"] == "mean"
     assert captured["timings_run_limit"] == 3
+    assert captured["min_history"] == 4
+    assert captured["history_window"] == 8
 
 
 def test_cli_writes_report_to_output_file(tmp_path):
