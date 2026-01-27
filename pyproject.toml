@@ -17,6 +17,7 @@ dev = [
 
 [project.scripts]
 ci-hunter = "ci_hunter.cli:main"
+ci-hunter-webhook = "ci_hunter.webhook_cmd:main"
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]

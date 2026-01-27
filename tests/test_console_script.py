@@ -1,8 +1,10 @@
-import importlib.metadata
+from pathlib import Path
+import tomllib
 
 
-def test_console_script_registered():
-    dist = importlib.metadata.distribution("ci-hunter")
-    entry_points = {ep.name: ep.value for ep in dist.entry_points if ep.group == "console_scripts"}
+def test_console_scripts_declared_in_pyproject():
+    pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
+    scripts = tomllib.loads(pyproject)["project"]["scripts"]
 
-    assert entry_points["ci-hunter"] == "ci_hunter.cli:main"
+    assert scripts["ci-hunter"] == "ci_hunter.cli:main"
+    assert scripts["ci-hunter-webhook"] == "ci_hunter.webhook_cmd:main"
