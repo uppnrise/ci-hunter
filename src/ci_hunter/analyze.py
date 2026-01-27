@@ -36,6 +36,8 @@ def analyze_repo_runs(
     *,
     min_delta_pct: float,
     baseline_strategy: str = BASELINE_STRATEGY_MEDIAN,
+    min_history: int = 1,
+    history_window: int | None = None,
 ) -> AnalysisResult:
     _validate_baseline_strategy(baseline_strategy)
     runs = storage.list_workflow_runs(repo)
@@ -47,6 +49,8 @@ def analyze_repo_runs(
         durations,
         min_delta_pct=min_delta_pct,
         baseline_strategy=baseline_strategy,
+        min_history=min_history,
+        history_window=history_window,
     )
     step_samples = storage.list_step_durations(repo)
     test_samples = storage.list_test_durations(repo)
@@ -54,11 +58,15 @@ def analyze_repo_runs(
         step_samples,
         min_delta_pct=min_delta_pct,
         baseline_strategy=baseline_strategy,
+        min_history=min_history,
+        history_window=history_window,
     )
     test_regressions = _detect_named_regressions(
         test_samples,
         min_delta_pct=min_delta_pct,
         baseline_strategy=baseline_strategy,
+        min_history=min_history,
+        history_window=history_window,
     )
     return AnalysisResult(
         repo=repo,
@@ -102,6 +110,8 @@ def _detect_named_regressions(
     *,
     min_delta_pct: float,
     baseline_strategy: str,
+    min_history: int,
+    history_window: int | None,
 ) -> _NamedRegressionResult:
     if not samples:
         return _NamedRegressionResult(regressions=[], reason=REASON_INSUFFICIENT_HISTORY)
@@ -123,6 +133,8 @@ def _detect_named_regressions(
             durations,
             min_delta_pct=min_delta_pct,
             baseline_strategy=baseline_strategy,
+            min_history=min_history,
+            history_window=history_window,
         )
         for regression in detection.regressions:
             regressions.append(
@@ -136,7 +148,14 @@ def _detect_named_regressions(
 
     if regressions:
         return _NamedRegressionResult(regressions=regressions, reason=None)
-    has_history = any(len(entries) > 1 for entries in by_name.values())
+    has_history = False
+    for entries in by_name.values():
+        baseline_len = len(entries) - 1
+        if history_window is not None:
+            baseline_len = min(baseline_len, history_window)
+        if baseline_len >= min_history:
+            has_history = True
+            break
     if has_history:
         return _NamedRegressionResult(regressions=[], reason=None)
     return _NamedRegressionResult(regressions=[], reason=REASON_INSUFFICIENT_HISTORY)

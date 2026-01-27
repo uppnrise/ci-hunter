@@ -35,12 +35,22 @@ def detect_run_duration_regressions(
     min_delta_pct: float,
     baseline_strategy: str = DEFAULT_BASELINE_STRATEGY,
     trim_ratio: float = DEFAULT_TRIM_RATIO,
+    min_history: int = 1,
+    history_window: int | None = None,
 ) -> DetectionResult:
+    if min_history < 1:
+        raise ValueError("min_history must be >= 1")
+    if history_window is not None and history_window < 1:
+        raise ValueError("history_window must be >= 1 when set")
     values = list(durations)
     if len(values) < 2:
         return DetectionResult(regressions=[], reason=REASON_INSUFFICIENT_HISTORY)
 
     baseline_values = values[:-1]
+    if history_window is not None:
+        baseline_values = baseline_values[-history_window:]
+    if len(baseline_values) < min_history:
+        return DetectionResult(regressions=[], reason=REASON_INSUFFICIENT_HISTORY)
     baseline = _compute_baseline(baseline_values, baseline_strategy, trim_ratio)
     if baseline is None:
         return DetectionResult(regressions=[], reason=REASON_INSUFFICIENT_HISTORY)

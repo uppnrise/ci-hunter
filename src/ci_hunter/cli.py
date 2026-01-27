@@ -20,6 +20,7 @@ from ci_hunter.storage import Storage, StorageConfig
 DEFAULT_MIN_DELTA_PCT = 0.2
 DEFAULT_DB = ":memory:"
 DEFAULT_TIMINGS_RUN_LIMIT = 10
+DEFAULT_MIN_HISTORY = 1
 FORMAT_MARKDOWN = "md"
 FORMAT_JSON = "json"
 
@@ -32,6 +33,8 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--baseline-strategy", default=None)
     parser.add_argument("--db", default=None)
     parser.add_argument("--timings-run-limit", type=int, default=None)
+    parser.add_argument("--min-history", type=int, default=None)
+    parser.add_argument("--history-window", type=int, default=None)
     parser.add_argument("--pr-number", type=int)
     parser.add_argument("--commit")
     parser.add_argument("--branch")
@@ -82,6 +85,8 @@ def main(
         repo=args.repo,
         min_delta_pct=args.min_delta_pct,
         baseline_strategy=args.baseline_strategy,
+        min_history=args.min_history,
+        history_window=args.history_window,
         timings_run_limit=args.timings_run_limit,
         step_fetcher=fetch_run_step_durations,
         test_fetcher=fetch_junit_durations_from_artifacts,
@@ -125,6 +130,8 @@ def _merge_config(args: argparse.Namespace, config: AppConfig) -> argparse.Names
     _apply_if_missing(merged, "baseline_strategy", config.baseline_strategy)
     _apply_if_missing(merged, "db", config.db)
     _apply_if_missing(merged, "timings_run_limit", config.timings_run_limit)
+    _apply_if_missing(merged, "min_history", getattr(config, "min_history", None))
+    _apply_if_missing(merged, "history_window", getattr(config, "history_window", None))
     _apply_if_missing(merged, "format", config.format)
     _apply_if_missing(merged, "dry_run", config.dry_run)
     _apply_if_missing(merged, "pr_number", config.pr_number)
@@ -156,6 +163,8 @@ def _apply_defaults(args: argparse.Namespace) -> None:
         args.db = DEFAULT_DB
     if args.timings_run_limit is None:
         args.timings_run_limit = DEFAULT_TIMINGS_RUN_LIMIT
+    if args.min_history is None:
+        args.min_history = DEFAULT_MIN_HISTORY
     if args.format is None:
         args.format = FORMAT_MARKDOWN
     if args.dry_run is None:

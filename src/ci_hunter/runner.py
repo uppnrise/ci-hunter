@@ -20,6 +20,8 @@ def fetch_store_analyze(
     repo: str,
     min_delta_pct: float,
     baseline_strategy: str,
+    min_history: int = 1,
+    history_window: int | None = None,
     step_fetcher: Callable[[str, str, int], list[StepDuration]] | None = None,
     test_fetcher: Callable[[str, str, int], list[TestDuration]] | None = None,
     timings_run_limit: int | None = None,
@@ -44,6 +46,8 @@ def fetch_store_analyze(
         repo,
         min_delta_pct=min_delta_pct,
         baseline_strategy=baseline_strategy,
+        min_history=min_history,
+        history_window=history_window,
     )
     return AnalysisResult(
         repo=analysis.repo,

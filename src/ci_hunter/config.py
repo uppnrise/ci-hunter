@@ -14,6 +14,8 @@ class AppConfig:
     baseline_strategy: Optional[str] = None
     db: Optional[str] = None
     timings_run_limit: Optional[int] = None
+    min_history: Optional[int] = None
+    history_window: Optional[int] = None
     format: Optional[str] = None
     dry_run: Optional[bool] = None
     pr_number: Optional[int] = None
@@ -32,6 +34,8 @@ def load_config(path: str | Path) -> AppConfig:
         baseline_strategy=data.get("baseline_strategy"),
         db=data.get("db"),
         timings_run_limit=_get_int(data, "timings_run_limit"),
+        min_history=_get_int(data, "min_history"),
+        history_window=_get_int(data, "history_window"),
         format=data.get("format"),
         dry_run=_get_bool(data, "dry_run"),
         pr_number=_get_int(data, "pr_number"),
