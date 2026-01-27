@@ -14,22 +14,22 @@
 10) CLI end-to-end flow with dry-run and PR posting
 11) Missing timing counts (attempted/failed) in reports
 12) Pagination for workflow runs
+13) Infer PR from branch/commit
+14) Config system (YAML + env overrides)
+15) Minimal retry/backoff policy for GitHub API calls
+16) Optional output destinations (file or stdout in addition to PR comment)
 
 ## Planned
 
 ### Near-term (next)
-1) Infer PR from branch/commit
-2) Config system (YAML + env overrides)
-3) Minimal retry/backoff policy for GitHub API calls
-4) Optional output destinations (file or stdout in addition to PR comment)
-
-### Medium-term (from Architecture)
 1) Webhook listener + scheduler + worker queue
 2) Postgres storage + migrations
 3) Provider abstraction + GitLab support
 4) Step/test change-point detection + flake detection
-5) Attribution to touched files (git diff integration)
-6) LLM explainer/remediator (optional, toggleable)
-7) Slack/Teams notifications + GitHub check-runs
-8) Artifact/log storage in object storage (S3-compatible)
-9) Observability: metrics/tracing, rate limit handling, and runbook
+
+### Medium-term (from Architecture)
+1) Attribution to touched files (git diff integration)
+2) LLM explainer/remediator (optional, toggleable)
+3) Slack/Teams notifications + GitHub check-runs
+4) Artifact/log storage in object storage (S3-compatible)
+5) Observability: metrics/tracing, rate limit handling, and runbook

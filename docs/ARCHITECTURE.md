@@ -9,7 +9,9 @@ End-to-end blueprint for an agent that detects CI bottlenecks, attributes likely
 - Step timing parsing from run logs
 - JUnit test duration parsing from artifacts
 - Markdown/JSON report rendering
-- CLI that can dry-run to stdout or post PR comments
+- CLI that can dry-run to stdout, write output files, or post PR comments
+- YAML config support with CLI overrides
+- GitHub API retry/backoff for transient errors
 
 ## 0) Scope and Modes
 - **Use cases**: PR regression commenting, scheduled branch monitoring, ChatOps queries, local dry-runs.
