@@ -140,6 +140,18 @@ handled, processed = process_webhook_event_via_queue(
 )
 ```
 
+## Scheduler (local queue file)
+
+There is a simple scheduler CLI that appends jobs to a JSONL file. This is a
+stand-in for a future persistent queue:
+
+```bash
+python -m ci_hunter.scheduler_cmd \
+  --repo owner/repo \
+  --pr-number 123 \
+  --queue-file queue.jsonl
+```
+
 ## Tests
 
 ```bash
