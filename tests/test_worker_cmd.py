@@ -188,3 +188,32 @@ def test_worker_cmd_loop_sleeps_only_when_no_jobs(tmp_path):
 
     assert exit_code == 0
     assert slept == [0.01]
+
+
+def test_worker_cmd_uses_file_lock(tmp_path, monkeypatch):
+    queue_path = tmp_path / "queue.jsonl"
+    queue_path.write_text(
+        '{"repo":"acme/repo","pr_number":1,"commit":"abc","branch":"feature"}\n',
+        encoding="utf-8",
+    )
+    calls: list[Path] = []
+
+    import ci_hunter.worker_cmd as worker_cmd
+
+    from contextlib import contextmanager
+
+    @contextmanager
+    def fake_locked_file(path: Path, mode: str, **_kwargs):
+        calls.append(path)
+        with open(path, mode, encoding="utf-8") as handle:
+            yield handle
+
+    monkeypatch.setattr(worker_cmd, "locked_file", fake_locked_file)
+
+    exit_code = main(
+        ["--queue-file", str(queue_path)],
+        cli_entry=lambda _argv: 0,
+    )
+
+    assert exit_code == 0
+    assert calls == [queue_path]

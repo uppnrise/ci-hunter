@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Iterable, TextIO
 
 from ci_hunter.cli import main as cli_main
+from ci_hunter.file_lock import locked_file
 from ci_hunter.queue import AnalysisJob
 
 
@@ -55,36 +56,40 @@ def _process_once(
     cli_entry: Callable[[list[str]], int],
     out: TextIO,
 ) -> tuple[int, int]:
-    jobs = _load_jobs(path, out=out)
-    if not jobs:
-        out.write(f"{path.name}: no jobs found\n")
-        return 0, 0
-    processed: list[AnalysisJob] = []
-    exit_code = 0
-    for job in jobs[:max_jobs]:
-        cli_argv = [
-            "--repo",
-            job.repo,
-            "--pr-number",
-            str(job.pr_number),
-        ]
-        if job.commit:
-            cli_argv.extend(["--commit", job.commit])
-        if job.branch:
-            cli_argv.extend(["--branch", job.branch])
-        exit_code = cli_entry(cli_argv)
-        if exit_code != 0:
-            break
-        processed.append(job)
-    remaining = jobs[len(processed) :]
-    _write_jobs(path, remaining)
+    with locked_file(path, "a+") as handle:
+        handle.seek(0)
+        content = handle.read()
+        jobs = _load_jobs_from_content(content, path.name, out=out)
+        if not jobs:
+            out.write(f"{path.name}: no jobs found\n")
+            return 0, 0
+        processed: list[AnalysisJob] = []
+        exit_code = 0
+        for job in jobs[:max_jobs]:
+            cli_argv = [
+                "--repo",
+                job.repo,
+                "--pr-number",
+                str(job.pr_number),
+            ]
+            if job.commit:
+                cli_argv.extend(["--commit", job.commit])
+            if job.branch:
+                cli_argv.extend(["--branch", job.branch])
+            exit_code = cli_entry(cli_argv)
+            if exit_code != 0:
+                break
+            processed.append(job)
+        remaining = jobs[len(processed) :]
+        new_content = _render_jobs(remaining)
+        handle.seek(0)
+        handle.truncate()
+        handle.write(new_content)
     return exit_code, len(remaining)
 
 
-def _load_jobs(path: Path, *, out: TextIO) -> list[AnalysisJob]:
-    if not path.exists():
-        return []
-    lines = list(enumerate(path.read_text(encoding="utf-8").splitlines(), start=1))
+def _load_jobs_from_content(content: str, path_name: str, *, out: TextIO) -> list[AnalysisJob]:
+    lines = list(enumerate(content.splitlines(), start=1))
     jobs: list[AnalysisJob] = []
     for line_number, line in lines:
         if not line.strip():
@@ -92,10 +97,10 @@ def _load_jobs(path: Path, *, out: TextIO) -> list[AnalysisJob]:
         try:
             payload = json.loads(line)
         except json.JSONDecodeError:
-            out.write(f"{path.name}:{line_number}: skipping invalid queue line\n")
+            out.write(f"{path_name}:{line_number}: skipping invalid queue line\n")
             continue
         if not _has_required_fields(payload):
-            out.write(f"{path.name}:{line_number}: skipping queue line missing required fields\n")
+            out.write(f"{path_name}:{line_number}: skipping queue line missing required fields\n")
             continue
         jobs.append(
             AnalysisJob(
@@ -104,11 +109,11 @@ def _load_jobs(path: Path, *, out: TextIO) -> list[AnalysisJob]:
                 commit=payload.get("commit"),
                 branch=payload.get("branch"),
             )
-        )
+    )
     return jobs
 
 
-def _write_jobs(path: Path, jobs: Iterable[AnalysisJob]) -> None:
+def _render_jobs(jobs: Iterable[AnalysisJob]) -> str:
     lines = [
         json.dumps(
             {
@@ -124,7 +129,7 @@ def _write_jobs(path: Path, jobs: Iterable[AnalysisJob]) -> None:
     content = "\n".join(lines)
     if content:
         content += "\n"
-    path.write_text(content, encoding="utf-8")
+    return content
 
 
 def _positive_int(value: str) -> int:

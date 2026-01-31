@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import TextIO
 
 from ci_hunter.queue import AnalysisJob, InMemoryJobQueue
+from ci_hunter.file_lock import locked_file
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -67,6 +68,7 @@ def _append_job(path: str, job: AnalysisJob) -> None:
         "commit": job.commit,
         "branch": job.branch,
     }
-    Path(path).parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "a", encoding="utf-8") as handle:
+    path_obj = Path(path)
+    path_obj.parent.mkdir(parents=True, exist_ok=True)
+    with locked_file(path_obj, "a") as handle:
         handle.write(json.dumps(payload) + "\n")

@@ -1,5 +1,6 @@
 import io
 import json
+from pathlib import Path
 
 import pytest
 
@@ -67,6 +68,37 @@ def test_scheduler_cmd_writes_job_to_queue_file(tmp_path):
         "commit": COMMIT,
         "branch": BRANCH,
     }
+
+
+def test_scheduler_cmd_uses_file_lock(tmp_path, monkeypatch):
+    queue_path = tmp_path / "queue.jsonl"
+    calls: list[Path] = []
+
+    import ci_hunter.scheduler_cmd as scheduler_cmd
+
+    from contextlib import contextmanager
+
+    @contextmanager
+    def fake_locked_file(path: Path, mode: str, **_kwargs):
+        calls.append(path)
+        with open(path, mode, encoding="utf-8") as handle:
+            yield handle
+
+    monkeypatch.setattr(scheduler_cmd, "locked_file", fake_locked_file)
+
+    exit_code = main(
+        [
+            "--repo",
+            REPO,
+            "--pr-number",
+            str(PR_NUMBER),
+            "--queue-file",
+            str(queue_path),
+        ]
+    )
+
+    assert exit_code == 0
+    assert calls == [queue_path]
 
 
 def test_scheduler_cmd_requires_queue_file_when_no_queue():
