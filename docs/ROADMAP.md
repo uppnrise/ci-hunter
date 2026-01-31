@@ -21,6 +21,7 @@
 17) Webhook groundwork (pull_request parsing + CLI pipeline runner)
 18) In-process queue/worker groundwork (enqueue + worker loop)
 19) Scheduler CLI to enqueue jobs into JSONL queue
+20) Worker CLI to process JSONL queue jobs
 
 ## Planned
 

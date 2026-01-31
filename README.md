@@ -152,6 +152,17 @@ python -m ci_hunter.scheduler_cmd \
   --queue-file queue.jsonl
 ```
 
+## Worker (local queue file)
+
+The worker CLI consumes jobs from the JSONL queue file and calls the main CLI
+for each job. You can limit how many jobs it processes per run:
+
+```bash
+python -m ci_hunter.worker_cmd \
+  --queue-file queue.jsonl \
+  --max-jobs 5
+```
+
 ## Tests
 
 ```bash

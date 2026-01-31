@@ -15,6 +15,7 @@ End-to-end blueprint for an agent that detects CI bottlenecks, attributes likely
 - Webhook groundwork: pull_request parsing and a local webhook-to-CLI pipeline
 - Queue/worker groundwork: in-process enqueue + worker loop to call the CLI
 - Scheduler groundwork: JSONL queue file enqueue CLI
+- Worker groundwork: JSONL queue file processing CLI
 
 ## 0) Scope and Modes
 - **Use cases**: PR regression commenting, scheduled branch monitoring, ChatOps queries, local dry-runs.
