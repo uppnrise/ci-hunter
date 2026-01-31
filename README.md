@@ -178,6 +178,8 @@ python -m ci_hunter.worker_cmd \
   --sleep-seconds 2
 ```
 
+Note: queue file access uses best-effort OS-specific file locks (fcntl on Unix, msvcrt on Windows).
+
 ## Tests
 
 ```bash

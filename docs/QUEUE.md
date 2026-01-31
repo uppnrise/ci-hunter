@@ -27,4 +27,4 @@ stand-in for a persistent queue. Each line is one job.
   the file with any remaining jobs.
 - Invalid JSON lines are skipped with a warning.
 - Lines missing required fields are skipped with a warning.
-
+- File locking is best-effort and OS-specific (fcntl on Unix, msvcrt on Windows).
