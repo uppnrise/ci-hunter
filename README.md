@@ -180,3 +180,4 @@ pytest -q
 - Architecture guide: `docs/ARCHITECTURE.md`
 - Planned work: `docs/ROADMAP.md`
 - Config notes: `docs/CONFIG.md`
+- Queue schema: `docs/QUEUE.md`
