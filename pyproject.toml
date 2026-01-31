@@ -18,6 +18,8 @@ dev = [
 [project.scripts]
 ci-hunter = "ci_hunter.cli:main"
 ci-hunter-webhook = "ci_hunter.webhook_cmd:main"
+ci-hunter-scheduler = "ci_hunter.scheduler_cmd:main"
+ci-hunter-worker = "ci_hunter.worker_cmd:main"
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]

@@ -8,3 +8,5 @@ def test_console_scripts_declared_in_pyproject():
 
     assert scripts["ci-hunter"] == "ci_hunter.cli:main"
     assert scripts["ci-hunter-webhook"] == "ci_hunter.webhook_cmd:main"
+    assert scripts["ci-hunter-scheduler"] == "ci_hunter.scheduler_cmd:main"
+    assert scripts["ci-hunter-worker"] == "ci_hunter.worker_cmd:main"
