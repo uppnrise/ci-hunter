@@ -168,6 +168,16 @@ python -m ci_hunter.worker_cmd \
   --max-jobs 5
 ```
 
+Loop mode (for polling):
+
+```bash
+python -m ci_hunter.worker_cmd \
+  --queue-file queue.jsonl \
+  --loop \
+  --max-loops 10 \
+  --sleep-seconds 2
+```
+
 ## Tests
 
 ```bash

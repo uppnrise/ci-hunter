@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import time
 from collections.abc import Callable
 from pathlib import Path
 from typing import Iterable, TextIO
@@ -15,6 +16,9 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="ci-hunter-worker")
     parser.add_argument("--queue-file", required=True)
     parser.add_argument("--max-jobs", type=_positive_int, default=1)
+    parser.add_argument("--loop", action="store_true")
+    parser.add_argument("--max-loops", type=_positive_int, default=1)
+    parser.add_argument("--sleep-seconds", type=_positive_float, default=1.0)
     return parser
 
 
@@ -23,17 +27,41 @@ def main(
     *,
     cli_entry: Callable[[list[str]], int] = cli_main,
     out: TextIO | None = None,
+    sleep: Callable[[float], None] = time.sleep,
 ) -> int:
     args = _build_parser().parse_args(argv)
     out = out or os.sys.stdout
     path = Path(args.queue_file)
+    loops = args.max_loops if args.loop else 1
+    exit_code = 0
+    for index in range(loops):
+        exit_code, remaining = _process_once(
+            path,
+            max_jobs=args.max_jobs,
+            cli_entry=cli_entry,
+            out=out,
+        )
+        if exit_code != 0:
+            break
+        if index < loops - 1 and remaining == 0:
+            sleep(args.sleep_seconds)
+    return exit_code
+
+
+def _process_once(
+    path: Path,
+    *,
+    max_jobs: int,
+    cli_entry: Callable[[list[str]], int],
+    out: TextIO,
+) -> tuple[int, int]:
     jobs = _load_jobs(path, out=out)
     if not jobs:
         out.write(f"{path.name}: no jobs found\n")
-        return 0
+        return 0, 0
     processed: list[AnalysisJob] = []
     exit_code = 0
-    for job in jobs[: args.max_jobs]:
+    for job in jobs[:max_jobs]:
         cli_argv = [
             "--repo",
             job.repo,
@@ -50,7 +78,7 @@ def main(
         processed.append(job)
     remaining = jobs[len(processed) :]
     _write_jobs(path, remaining)
-    return exit_code
+    return exit_code, len(remaining)
 
 
 def _load_jobs(path: Path, *, out: TextIO) -> list[AnalysisJob]:
@@ -103,6 +131,13 @@ def _positive_int(value: str) -> int:
     number = int(value)
     if number <= 0:
         raise argparse.ArgumentTypeError("max-jobs must be a positive integer")
+    return number
+
+
+def _positive_float(value: str) -> float:
+    number = float(value)
+    if number <= 0:
+        raise argparse.ArgumentTypeError("sleep-seconds must be positive")
     return number
 
 
