@@ -75,6 +75,11 @@ The console script is installed as `ci-hunter` and wraps `ci_hunter.cli.main`. I
 - `--output-file`
 - `--no-comment`
 
+Additional console scripts:
+- `ci-hunter-webhook` (local webhook payload runner)
+- `ci-hunter-scheduler` (append jobs to a JSONL queue file)
+- `ci-hunter-worker` (process jobs from a JSONL queue file)
+
 Examples:
 
 ```bash
