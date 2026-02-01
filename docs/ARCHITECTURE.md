@@ -13,6 +13,7 @@ End-to-end blueprint for an agent that detects CI bottlenecks, attributes likely
 - YAML config support with CLI overrides
 - GitHub API retry/backoff for transient errors
 - Webhook groundwork: pull_request parsing and a local webhook-to-CLI pipeline
+- Webhook HTTP handler building blocks (no server wiring yet)
 - Queue/worker groundwork: in-process enqueue + worker loop to call the CLI
 - Scheduler groundwork: JSONL queue file enqueue CLI
 - Worker groundwork: JSONL queue file processing CLI

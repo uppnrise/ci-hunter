@@ -23,6 +23,7 @@
 19) Scheduler CLI to enqueue jobs into JSONL queue
 20) Worker CLI to process JSONL queue jobs
 21) Cross-platform queue file locking (fcntl/msvcrt)
+22) Webhook HTTP handler building blocks (no server wiring yet)
 
 ## Planned
 
