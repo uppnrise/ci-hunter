@@ -56,6 +56,8 @@ Notes:
   - unsupported transfer encoding is rejected before webhook dispatch
   - POST requests must include valid `Content-Length`
   - oversize requests are rejected early when `Content-Length` exceeds the configured limit
+  - `Transfer-Encoding: chunked` is intentionally unsupported in the current listener implementation
+    (optional guarded support is tracked in roadmap)
 - Listener observability logs:
   - per request: `webhook_request method=<...> status=<...> outcome=<...> reason=<...> reject_count=<...> total_count=<...>`
   - on shutdown: `webhook_metrics total=<...> accepted=<...> rejected=<...> reject_reasons=<...>`
