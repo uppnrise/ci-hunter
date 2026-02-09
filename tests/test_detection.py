@@ -3,12 +3,14 @@ import pytest
 from ci_hunter.detection import (
     BASELINE_STRATEGY_MEDIAN,
     BASELINE_STRATEGY_TRIMMED_MEAN,
+    ChangePoint,
     DetectionResult,
     Flake,
     METRIC_RUN_DURATION_SECONDS,
     REASON_INSUFFICIENT_HISTORY,
     REASON_NON_POSITIVE_BASELINE,
     Regression,
+    detect_run_duration_change_points,
     detect_test_flakes,
     detect_run_duration_regressions,
 )
@@ -209,3 +211,40 @@ def test_detect_test_flakes_ignores_consistently_failing_tests():
     )
 
     assert flakes == []
+
+
+def test_detects_run_duration_change_point():
+    change_points = detect_run_duration_change_points(
+        [10.0, 10.0, 10.0, 20.0, 20.0, 20.0],
+        min_delta_pct=0.5,
+        window_size=3,
+    )
+
+    assert change_points == [
+        ChangePoint(
+            metric=METRIC_RUN_DURATION_SECONDS,
+            baseline=10.0,
+            recent=20.0,
+            delta_pct=1.0,
+            window_size=3,
+        )
+    ]
+
+
+def test_change_point_history_window_is_respected():
+    change_points = detect_run_duration_change_points(
+        [100.0, 100.0, 100.0, 10.0, 10.0, 10.0, 20.0, 20.0, 20.0],
+        min_delta_pct=0.5,
+        window_size=3,
+        history_window=6,
+    )
+
+    assert change_points == [
+        ChangePoint(
+            metric=METRIC_RUN_DURATION_SECONDS,
+            baseline=10.0,
+            recent=20.0,
+            delta_pct=1.0,
+            window_size=3,
+        )
+    ]

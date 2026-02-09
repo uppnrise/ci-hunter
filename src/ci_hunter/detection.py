@@ -39,6 +39,15 @@ class Flake:
     total_runs: int
 
 
+@dataclass(frozen=True)
+class ChangePoint:
+    metric: str
+    baseline: float
+    recent: float
+    delta_pct: float
+    window_size: int
+
+
 def detect_run_duration_regressions(
     durations: Iterable[float],
     *,
@@ -171,3 +180,42 @@ def detect_test_flakes(
 
     flakes.sort(key=lambda flake: (-flake.fail_rate, -flake.failures, flake.test_name))
     return flakes
+
+
+def detect_run_duration_change_points(
+    durations: Iterable[float],
+    *,
+    min_delta_pct: float,
+    window_size: int = 3,
+    history_window: int | None = None,
+) -> list[ChangePoint]:
+    if window_size < 1:
+        raise ValueError("window_size must be >= 1")
+    if history_window is not None and history_window < 1:
+        raise ValueError("history_window must be >= 1 when set")
+
+    values = list(durations)
+    if history_window is not None:
+        values = values[-history_window:]
+    if len(values) < window_size * 2:
+        return []
+
+    baseline_window = values[-2 * window_size : -window_size]
+    recent_window = values[-window_size:]
+    baseline = sum(baseline_window) / len(baseline_window)
+    if baseline <= 0:
+        return []
+    recent = sum(recent_window) / len(recent_window)
+    delta_pct = (recent - baseline) / baseline
+    if delta_pct < min_delta_pct:
+        return []
+
+    return [
+        ChangePoint(
+            metric=METRIC_RUN_DURATION_SECONDS,
+            baseline=baseline,
+            recent=recent,
+            delta_pct=delta_pct,
+            window_size=window_size,
+        )
+    ]

@@ -32,12 +32,13 @@
 28) Webhook listener observability (structured request metrics + reject counters)
 29) Webhook body framing hardening (reject unsupported `Transfer-Encoding`, require valid `Content-Length`)
 30) JUnit test outcome extraction + flaky test detection (markdown/json reporting)
+31) Step/test change-point detection and reporting
 
 ## Planned
 
 ### Near-term (next)
 1) Provider abstraction + GitLab support
-2) Step/test change-point detection
+2) Make change-point parameters configurable (window size and dedicated thresholds for step/test)
 
 ### Medium-term (from Architecture)
 1) Attribution to touched files (git diff integration)

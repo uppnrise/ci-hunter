@@ -1,7 +1,7 @@
 import json
 
 from ci_hunter.analyze import AnalysisResult
-from ci_hunter.detection import Flake, Regression
+from ci_hunter.detection import ChangePoint, Flake, Regression
 from ci_hunter.report import render_json_report
 
 
@@ -47,6 +47,24 @@ def test_render_json_report():
                 total_runs=5,
             )
         ],
+        step_change_points=[
+            ChangePoint(
+                metric="Checkout",
+                baseline=5.0,
+                recent=10.0,
+                delta_pct=1.0,
+                window_size=3,
+            )
+        ],
+        test_change_points=[
+            ChangePoint(
+                metric="tests.alpha",
+                baseline=1.0,
+                recent=2.0,
+                delta_pct=1.0,
+                window_size=3,
+            )
+        ],
     )
 
     report = render_json_report(result)
@@ -62,3 +80,5 @@ def test_render_json_report():
     assert payload["test_timings_attempted"] == 10
     assert payload["test_timings_failed"] == 4
     assert payload["flakes"][0]["test_name"] == "tests.alpha::test_x"
+    assert payload["step_change_points"][0]["metric"] == "Checkout"
+    assert payload["test_change_points"][0]["metric"] == "tests.alpha"

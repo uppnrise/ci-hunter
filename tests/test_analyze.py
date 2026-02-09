@@ -1,5 +1,5 @@
 from ci_hunter.analyze import AnalysisResult, analyze_repo_runs
-from ci_hunter.detection import BASELINE_STRATEGY_MEDIAN, Flake
+from ci_hunter.detection import BASELINE_STRATEGY_MEDIAN, ChangePoint, Flake
 from ci_hunter.github.client import WorkflowRun
 from ci_hunter.junit import TEST_OUTCOME_FAILED, TestDuration, TestOutcome
 from ci_hunter.steps import StepDuration
@@ -328,3 +328,70 @@ def test_analyze_repo_runs_flake_detection_respects_history_window():
     )
 
     assert result.flakes == []
+
+
+def test_analyze_repo_runs_detects_step_and_test_change_points():
+    storage = Storage(":memory:")
+    runs = []
+    for run_id in range(1, 7):
+        runs.append(
+            WorkflowRun(
+                id=run_id,
+                run_number=run_id,
+                status=STATUS_COMPLETED,
+                conclusion=CONCLUSION_SUCCESS,
+                created_at=CREATED_AT,
+                updated_at=UPDATED_AT_CURRENT,
+                head_sha=f"sha-{run_id}",
+            )
+        )
+    storage.save_workflow_runs(REPO, runs)
+
+    for run_id in range(1, 4):
+        storage.save_step_durations(
+            REPO,
+            run_id,
+            [StepDuration(name="Checkout", duration_seconds=10.0)],
+        )
+        storage.save_test_durations(
+            REPO,
+            run_id,
+            [TestDuration(name="tests.alpha", duration_seconds=2.0)],
+        )
+    for run_id in range(4, 7):
+        storage.save_step_durations(
+            REPO,
+            run_id,
+            [StepDuration(name="Checkout", duration_seconds=20.0)],
+        )
+        storage.save_test_durations(
+            REPO,
+            run_id,
+            [TestDuration(name="tests.alpha", duration_seconds=4.0)],
+        )
+
+    result = analyze_repo_runs(
+        storage,
+        REPO,
+        min_delta_pct=0.5,
+        baseline_strategy=BASELINE_STRATEGY_MEDIAN,
+    )
+
+    assert result.step_change_points == [
+        ChangePoint(
+            metric="Checkout",
+            baseline=10.0,
+            recent=20.0,
+            delta_pct=1.0,
+            window_size=3,
+        )
+    ]
+    assert result.test_change_points == [
+        ChangePoint(
+            metric="tests.alpha",
+            baseline=2.0,
+            recent=4.0,
+            delta_pct=1.0,
+            window_size=3,
+        )
+    ]

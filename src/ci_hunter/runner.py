@@ -63,6 +63,8 @@ def fetch_store_analyze(
         step_timings_failed=timing_stats.step_failed,
         test_timings_attempted=timing_stats.test_attempted,
         test_timings_failed=timing_stats.test_failed,
+        step_change_points=analysis.step_change_points,
+        test_change_points=analysis.test_change_points,
         flakes=analysis.flakes,
     )
 

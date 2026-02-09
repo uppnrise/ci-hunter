@@ -6,8 +6,9 @@ CI Hunter is a small Python codebase for detecting CI run slowdowns. It currentl
 - parses step timings (job-prefixed), JUnit test durations, and JUnit test outcomes (for recent runs),
 - stores workflow runs, step timings, test timings, and test outcomes in SQLite (default) or PostgreSQL via `--db`/`database_url`,
 - computes run-duration regressions with configurable baselines,
+- detects step/test duration change points from recent window shifts,
 - detects flaky tests from historical outcomes,
-- renders markdown/JSON reports (with per-run/step/test sections, flaky-test section, and missing-data counts) and can post PR comments.
+- renders markdown/JSON reports (with per-run/step/test regression sections, change-point sections, flaky-test section, and missing-data counts) and can post PR comments.
 
 This repo is early-stage but includes a packaged console script (`ci-hunter`) and a Python-level entrypoint.
 
@@ -94,7 +95,7 @@ The console script is installed as `ci-hunter` and wraps `ci_hunter.cli.main`. I
 - `--timings-run-limit`
 - `--min-history`
 - `--history-window`
-  - applies to run/step/test regression baselines and flaky-test analysis window
+  - applies to run/step/test regression baselines, step/test change-point analysis window, and flaky-test analysis window
 - `--commit` or `--branch` (for PR inference when `--pr-number` is omitted)
 - `--config` (YAML config file)
 - `--format {md,json}`

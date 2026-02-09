@@ -7,9 +7,11 @@ from ci_hunter.detection import (
     BASELINE_STRATEGY_MEDIAN,
     BASELINE_STRATEGY_MEAN,
     BASELINE_STRATEGY_TRIMMED_MEAN,
+    ChangePoint,
     Flake,
     Regression,
     REASON_INSUFFICIENT_HISTORY,
+    detect_run_duration_change_points,
     detect_test_flakes,
     detect_run_duration_regressions,
 )
@@ -30,6 +32,8 @@ class AnalysisResult:
     step_timings_failed: Optional[int]
     test_timings_attempted: Optional[int]
     test_timings_failed: Optional[int]
+    step_change_points: list[ChangePoint] = field(default_factory=list)
+    test_change_points: list[ChangePoint] = field(default_factory=list)
     flakes: list[Flake] = field(default_factory=list)
 
 
@@ -72,6 +76,16 @@ def analyze_repo_runs(
         min_history=min_history,
         history_window=history_window,
     )
+    step_change_points = _detect_named_change_points(
+        step_samples,
+        min_delta_pct=min_delta_pct,
+        history_window=history_window,
+    )
+    test_change_points = _detect_named_change_points(
+        test_samples,
+        min_delta_pct=min_delta_pct,
+        history_window=history_window,
+    )
     flakes = detect_test_flakes(
         test_outcome_samples,
         history_window=history_window,
@@ -88,6 +102,8 @@ def analyze_repo_runs(
         step_timings_failed=None,
         test_timings_attempted=None,
         test_timings_failed=None,
+        step_change_points=step_change_points,
+        test_change_points=test_change_points,
         flakes=flakes,
     )
 
@@ -168,3 +184,40 @@ def _detect_named_regressions(
     if has_history:
         return _NamedRegressionResult(regressions=[], reason=None)
     return _NamedRegressionResult(regressions=[], reason=REASON_INSUFFICIENT_HISTORY)
+
+
+def _detect_named_change_points(
+    samples: list[object],
+    *,
+    min_delta_pct: float,
+    history_window: int | None,
+) -> list[ChangePoint]:
+    by_name: dict[str, list[tuple[int, float]]] = {}
+    for sample in samples:
+        run_number = getattr(sample, "run_number")
+        name = getattr(sample, "step_name", None)
+        if name is None:
+            name = getattr(sample, "test_name")
+        duration = getattr(sample, "duration_seconds")
+        by_name.setdefault(name, []).append((run_number, duration))
+
+    change_points: list[ChangePoint] = []
+    for name, entries in by_name.items():
+        entries.sort(key=lambda item: item[0])
+        durations = [duration for _, duration in entries]
+        detected = detect_run_duration_change_points(
+            durations,
+            min_delta_pct=min_delta_pct,
+            history_window=history_window,
+        )
+        for point in detected:
+            change_points.append(
+                ChangePoint(
+                    metric=name,
+                    baseline=point.baseline,
+                    recent=point.recent,
+                    delta_pct=point.delta_pct,
+                    window_size=point.window_size,
+                )
+            )
+    return change_points

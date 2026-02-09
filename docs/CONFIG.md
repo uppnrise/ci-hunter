@@ -9,7 +9,7 @@ Current parameters:
 - `analyze_repo_runs(..., min_delta_pct=..., baseline_strategy=..., min_history=..., history_window=...)`
   - `baseline_strategy` accepted values: `median`, `mean`, `trimmed_mean`
   - `min_history` is the minimum baseline run count required to evaluate regressions
-  - `history_window` limits how many recent runs to consider for baseline regressions and flaky-test detection
+  - `history_window` limits how many recent runs to consider for baseline regressions, step/test change-point detection, and flaky-test detection
 - CLI (console script `ci-hunter`, entrypoint `ci_hunter.cli.main`) uses:
   - `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, `GITHUB_PRIVATE_KEY_PEM`
   - `--config` (YAML config file)
@@ -34,6 +34,7 @@ Notes:
 - Step timings are prefixed with the job log filename (e.g., `build/Checkout`).
 - JSON reports include timing fetch counts: `step_timings_attempted`, `step_timings_failed`,
   `test_timings_attempted`, `test_timings_failed`.
+- Reports include step/test change-point sections, using a fixed recent window size of 3 runs.
 - Config precedence: CLI > config > defaults. Secrets remain env-only.
 - Boolean values in config accept true/false (case-insensitive); invalid strings raise an error.
 - `min_history` and `history_window` must be positive integers when set.

@@ -3,13 +3,16 @@ from __future__ import annotations
 import json
 
 from ci_hunter.analyze import AnalysisResult
-from ci_hunter.detection import Flake
+from ci_hunter.detection import ChangePoint, Flake
 
 SECTION_RUN = "Run regressions"
 SECTION_STEP = "Step regressions"
 SECTION_TEST = "Test regressions"
+SECTION_STEP_CHANGES = "Step change points"
+SECTION_TEST_CHANGES = "Test change points"
 SECTION_FLAKES = "Flaky tests"
 SECTION_NONE = "No regressions detected"
+SECTION_NONE_CHANGE_POINTS = "No change points detected"
 SECTION_NO_FLAKES = "No flaky tests detected"
 REASON_PREFIX = "Reason: "
 MISSING_STEP_DATA = "Step data missing"
@@ -43,6 +46,8 @@ def render_markdown_report(result: AnalysisResult) -> str:
             ),
         )
     )
+    lines.extend(_render_change_point_section(SECTION_STEP_CHANGES, result.step_change_points))
+    lines.extend(_render_change_point_section(SECTION_TEST_CHANGES, result.test_change_points))
     lines.extend(_render_flake_section(result.flakes))
     return "\n".join(lines)
 
@@ -60,6 +65,8 @@ def render_json_report(result: AnalysisResult) -> str:
         "step_timings_failed": result.step_timings_failed,
         "test_timings_attempted": result.test_timings_attempted,
         "test_timings_failed": result.test_timings_failed,
+        "step_change_points": _render_change_point_payloads(result.step_change_points),
+        "test_change_points": _render_change_point_payloads(result.test_change_points),
         "flakes": [
             {
                 "test_name": flake.test_name,
@@ -111,6 +118,19 @@ def _render_regression_payloads(regressions: list) -> list[dict]:
     ]
 
 
+def _render_change_point_payloads(change_points: list[ChangePoint]) -> list[dict]:
+    return [
+        {
+            "metric": point.metric,
+            "baseline": point.baseline,
+            "recent": point.recent,
+            "delta_pct": point.delta_pct,
+            "window_size": point.window_size,
+        }
+        for point in change_points
+    ]
+
+
 def _missing_data_note(prefix: str, attempted: int | None, failed: int | None) -> str | None:
     if attempted is None or failed is None:
         return None
@@ -129,5 +149,20 @@ def _render_flake_section(flakes: list[Flake]) -> list[str]:
         lines.append(
             f"- {flake.test_name}: "
             f"{flake.failures}/{flake.total_runs} failures ({fail_pct:.1f}% fail rate)"
+        )
+    return lines
+
+
+def _render_change_point_section(title: str, change_points: list[ChangePoint]) -> list[str]:
+    lines = [f"## {title}"]
+    if not change_points:
+        lines.append(f"- {SECTION_NONE_CHANGE_POINTS}")
+        return lines
+    for point in change_points:
+        delta_pct = point.delta_pct * 100
+        lines.append(
+            f"- {point.metric}: "
+            f"{point.recent:.1f}s vs {point.baseline:.1f}s "
+            f"({delta_pct:+.1f}%) over last {point.window_size} runs"
         )
     return lines
