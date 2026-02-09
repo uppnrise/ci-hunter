@@ -4,8 +4,6 @@ import io
 import zipfile
 from typing import List
 
-import httpx
-
 from ci_hunter.github.client import (
     AUTH_SCHEME,
     DEFAULT_BASE_URL,
@@ -17,7 +15,12 @@ from ci_hunter.github.client import (
     HEADER_AUTHORIZATION,
 )
 from ci_hunter.github.http import request_with_retry
-from ci_hunter.junit import TestDuration, parse_junit_durations
+from ci_hunter.junit import (
+    TestDuration,
+    TestOutcome,
+    parse_junit_durations,
+    parse_junit_test_outcomes,
+)
 
 
 def fetch_junit_durations_from_artifacts(
@@ -33,6 +36,21 @@ def fetch_junit_durations_from_artifacts(
         zip_bytes = _download_artifact_zip(token, repo, artifact_id, base_url)
         durations.extend(_parse_junit_zip(zip_bytes))
     return durations
+
+
+def fetch_junit_test_outcomes_from_artifacts(
+    *,
+    token: str,
+    repo: str,
+    run_id: int,
+    base_url: str = DEFAULT_BASE_URL,
+) -> List[TestOutcome]:
+    artifacts = _list_artifacts(token, repo, run_id, base_url)
+    outcomes: list[TestOutcome] = []
+    for artifact_id in artifacts:
+        zip_bytes = _download_artifact_zip(token, repo, artifact_id, base_url)
+        outcomes.extend(_parse_junit_outcomes_zip(zip_bytes))
+    return outcomes
 
 
 def _list_artifacts(token: str, repo: str, run_id: int, base_url: str) -> list[int]:
@@ -83,3 +101,17 @@ def _parse_junit_zip(zip_bytes: bytes) -> List[TestDuration]:
                 text = handle.read().decode("utf-8", errors="replace")
             durations.extend(parse_junit_durations(text))
     return durations
+
+
+def _parse_junit_outcomes_zip(zip_bytes: bytes) -> List[TestOutcome]:
+    outcomes: list[TestOutcome] = []
+    with zipfile.ZipFile(io.BytesIO(zip_bytes), "r") as zip_file:
+        for name in zip_file.namelist():
+            if name.endswith("/"):
+                continue
+            if not name.lower().endswith(".xml"):
+                continue
+            with zip_file.open(name) as handle:
+                text = handle.read().decode("utf-8", errors="replace")
+            outcomes.extend(parse_junit_test_outcomes(text))
+    return outcomes

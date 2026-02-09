@@ -2,9 +2,15 @@ import sqlite3
 import pytest
 
 from ci_hunter.github.client import WorkflowRun
-from ci_hunter.junit import TestDuration
+from ci_hunter.junit import TEST_OUTCOME_FAILED, TestDuration, TestOutcome
 from ci_hunter.steps import StepDuration
-from ci_hunter.storage import Storage, StorageConfig, StepDurationSample, TestDurationSample
+from ci_hunter.storage import (
+    StepDurationSample,
+    Storage,
+    StorageConfig,
+    TestDurationSample,
+    TestOutcomeSample,
+)
 
 REPO = "acme/repo"
 POSTGRES_URL = "postgresql://user:pass@localhost:5432/ci_hunter"
@@ -29,6 +35,8 @@ TEST_ALPHA = "tests.test_alpha"
 TEST_BETA = "tests.test_beta"
 DURATION_TEST_ALPHA = 1.25
 DURATION_TEST_BETA = 2.5
+TEST_OUTCOME_ALPHA = "tests.test_alpha::test_one"
+TEST_OUTCOME_BETA = "tests.test_beta::test_two"
 
 
 def test_save_and_list_workflow_runs():
@@ -200,6 +208,64 @@ def test_save_and_list_test_durations():
             run_number=RUN_NUMBER_SECOND,
             test_name=TEST_BETA,
             duration_seconds=DURATION_TEST_BETA,
+        ),
+    ]
+
+
+def test_save_and_list_test_outcomes():
+    storage = Storage(StorageConfig(database_url=":memory:"))
+
+    first_run = WorkflowRun(
+        id=RUN_ID,
+        run_number=RUN_NUMBER,
+        status=STATUS_COMPLETED,
+        conclusion=CONCLUSION_SUCCESS,
+        created_at=CREATED_AT,
+        updated_at=UPDATED_AT,
+        head_sha=HEAD_SHA_ORIGINAL,
+    )
+    second_run = WorkflowRun(
+        id=RUN_ID_SECOND,
+        run_number=RUN_NUMBER_SECOND,
+        status=STATUS_COMPLETED,
+        conclusion=CONCLUSION_SUCCESS,
+        created_at=CREATED_AT,
+        updated_at=UPDATED_AT,
+        head_sha=HEAD_SHA_ORIGINAL,
+    )
+    storage.save_workflow_runs(REPO, [first_run, second_run])
+
+    storage.save_test_outcomes(
+        REPO,
+        RUN_ID,
+        [
+            TestOutcome(name=TEST_OUTCOME_ALPHA, outcome=TEST_OUTCOME_FAILED),
+        ],
+    )
+    storage.save_test_outcomes(
+        REPO,
+        RUN_ID_SECOND,
+        [
+            TestOutcome(name=TEST_OUTCOME_ALPHA, outcome="passed"),
+            TestOutcome(name=TEST_OUTCOME_BETA, outcome="passed"),
+        ],
+    )
+
+    assert storage.list_test_outcomes(REPO) == [
+        TestOutcomeSample(
+            run_number=RUN_NUMBER,
+            test_name=TEST_OUTCOME_ALPHA,
+            outcome=TEST_OUTCOME_FAILED,
+        ),
+        TestOutcomeSample(
+            run_number=RUN_NUMBER_SECOND,
+            test_name=TEST_OUTCOME_ALPHA,
+            outcome="passed",
+        ),
+        TestOutcomeSample(
+            run_number=RUN_NUMBER_SECOND,
+            test_name=TEST_OUTCOME_BETA,
+            outcome="passed",
         ),
     ]
 

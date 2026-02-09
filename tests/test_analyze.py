@@ -1,7 +1,7 @@
 from ci_hunter.analyze import AnalysisResult, analyze_repo_runs
-from ci_hunter.detection import BASELINE_STRATEGY_MEDIAN
+from ci_hunter.detection import BASELINE_STRATEGY_MEDIAN, Flake
 from ci_hunter.github.client import WorkflowRun
-from ci_hunter.junit import TestDuration
+from ci_hunter.junit import TEST_OUTCOME_FAILED, TestDuration, TestOutcome
 from ci_hunter.steps import StepDuration
 from ci_hunter.storage import Storage
 
@@ -188,3 +188,143 @@ def test_analyze_repo_runs_step_reason_none_when_no_regression():
 
     assert result.step_regressions == []
     assert result.step_reason is None
+
+
+def test_analyze_repo_runs_detects_flaky_tests():
+    storage = Storage(":memory:")
+    storage.save_workflow_runs(
+        REPO,
+        [
+            WorkflowRun(
+                id=RUN_ID_BASELINE,
+                run_number=RUN_NUMBER_BASELINE,
+                status=STATUS_COMPLETED,
+                conclusion=CONCLUSION_SUCCESS,
+                created_at=CREATED_AT,
+                updated_at=UPDATED_AT_BASELINE,
+                head_sha=HEAD_SHA_BASELINE,
+            ),
+            WorkflowRun(
+                id=RUN_ID_CURRENT,
+                run_number=RUN_NUMBER_CURRENT,
+                status=STATUS_COMPLETED,
+                conclusion=CONCLUSION_SUCCESS,
+                created_at=CREATED_AT,
+                updated_at=UPDATED_AT_CURRENT,
+                head_sha=HEAD_SHA_CURRENT,
+            ),
+            WorkflowRun(
+                id=3,
+                run_number=3,
+                status=STATUS_COMPLETED,
+                conclusion=CONCLUSION_SUCCESS,
+                created_at=CREATED_AT,
+                updated_at=UPDATED_AT_CURRENT,
+                head_sha="ghi789",
+            ),
+            WorkflowRun(
+                id=4,
+                run_number=4,
+                status=STATUS_COMPLETED,
+                conclusion=CONCLUSION_SUCCESS,
+                created_at=CREATED_AT,
+                updated_at=UPDATED_AT_CURRENT,
+                head_sha="jkl012",
+            ),
+            WorkflowRun(
+                id=5,
+                run_number=5,
+                status=STATUS_COMPLETED,
+                conclusion=CONCLUSION_SUCCESS,
+                created_at=CREATED_AT,
+                updated_at=UPDATED_AT_CURRENT,
+                head_sha="mno345",
+            ),
+        ],
+    )
+    test_name = "tests.alpha::test_x"
+    storage.save_test_outcomes(
+        REPO,
+        RUN_ID_BASELINE,
+        [TestOutcome(name=test_name, outcome=TEST_OUTCOME_FAILED)],
+    )
+    storage.save_test_outcomes(
+        REPO,
+        RUN_ID_CURRENT,
+        [TestOutcome(name=test_name, outcome="passed")],
+    )
+    storage.save_test_outcomes(
+        REPO,
+        3,
+        [TestOutcome(name=test_name, outcome=TEST_OUTCOME_FAILED)],
+    )
+    storage.save_test_outcomes(
+        REPO,
+        4,
+        [TestOutcome(name=test_name, outcome="passed")],
+    )
+    storage.save_test_outcomes(
+        REPO,
+        5,
+        [TestOutcome(name=test_name, outcome="passed")],
+    )
+
+    result = analyze_repo_runs(
+        storage,
+        REPO,
+        min_delta_pct=MIN_DELTA_PCT,
+        baseline_strategy=BASELINE_STRATEGY_MEDIAN,
+    )
+
+    assert result.flakes == [
+        Flake(
+            test_name=test_name,
+            fail_rate=0.4,
+            failures=2,
+            total_runs=5,
+        )
+    ]
+
+
+def test_analyze_repo_runs_flake_detection_respects_history_window():
+    storage = Storage(":memory:")
+    test_name = "tests.alpha::test_window"
+    runs = []
+    for run_id in range(1, 7):
+        runs.append(
+            WorkflowRun(
+                id=run_id,
+                run_number=run_id,
+                status=STATUS_COMPLETED,
+                conclusion=CONCLUSION_SUCCESS,
+                created_at=CREATED_AT,
+                updated_at=UPDATED_AT_CURRENT,
+                head_sha=f"sha-{run_id}",
+            )
+        )
+    storage.save_workflow_runs(REPO, runs)
+
+    outcomes = [
+        TEST_OUTCOME_FAILED,
+        TEST_OUTCOME_FAILED,
+        "passed",
+        "passed",
+        "passed",
+        "passed",
+    ]
+    for run_id, outcome in enumerate(outcomes, start=1):
+        storage.save_test_outcomes(
+            REPO,
+            run_id,
+            [TestOutcome(name=test_name, outcome=outcome)],
+        )
+
+    result = analyze_repo_runs(
+        storage,
+        REPO,
+        min_delta_pct=MIN_DELTA_PCT,
+        baseline_strategy=BASELINE_STRATEGY_MEDIAN,
+        history_window=5,
+    )
+
+    assert result.flakes == []

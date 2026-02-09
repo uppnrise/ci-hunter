@@ -8,7 +8,7 @@ from ci_hunter.github.auth import GitHubAppAuth
 from ci_hunter.github.client import GitHubActionsClient
 from ci_hunter.storage import Storage
 from ci_hunter.steps import StepDuration
-from ci_hunter.junit import TestDuration
+from ci_hunter.junit import TestDuration, TestOutcome
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +24,7 @@ def fetch_store_analyze(
     history_window: int | None = None,
     step_fetcher: Callable[[str, str, int], list[StepDuration]] | None = None,
     test_fetcher: Callable[[str, str, int], list[TestDuration]] | None = None,
+    test_outcome_fetcher: Callable[[str, str, int], list[TestOutcome]] | None = None,
     timings_run_limit: int | None = None,
 ) -> AnalysisResult:
     installation = auth.get_installation_token()
@@ -31,7 +32,7 @@ def fetch_store_analyze(
     runs = client.list_workflow_runs(repo)
     storage.save_workflow_runs(repo, runs)
     timing_stats = _TimingStats()
-    if step_fetcher or test_fetcher:
+    if step_fetcher or test_fetcher or test_outcome_fetcher:
         timing_stats = _fetch_and_store_timings(
             token=installation.token,
             repo=repo,
@@ -39,6 +40,7 @@ def fetch_store_analyze(
             storage=storage,
             step_fetcher=step_fetcher,
             test_fetcher=test_fetcher,
+            test_outcome_fetcher=test_outcome_fetcher,
             run_limit=timings_run_limit,
         )
     analysis = analyze_repo_runs(
@@ -61,6 +63,7 @@ def fetch_store_analyze(
         step_timings_failed=timing_stats.step_failed,
         test_timings_attempted=timing_stats.test_attempted,
         test_timings_failed=timing_stats.test_failed,
+        flakes=analysis.flakes,
     )
 
 
@@ -80,6 +83,7 @@ def _fetch_and_store_timings(
     storage: Storage,
     step_fetcher: Callable[[str, str, int], list[StepDuration]] | None,
     test_fetcher: Callable[[str, str, int], list[TestDuration]] | None,
+    test_outcome_fetcher: Callable[[str, str, int], list[TestOutcome]] | None,
     run_limit: int | None,
 ) -> _TimingStats:
     stats = _TimingStats()
@@ -125,6 +129,18 @@ def _fetch_and_store_timings(
                 stats.test_failed += 1
                 logger.warning(
                     "Test timings fetch failed for repo=%s run_id=%s",
+                    repo,
+                    run.id,
+                    exc_info=True,
+                )
+        if test_outcome_fetcher is not None:
+            try:
+                outcomes = test_outcome_fetcher(token, repo, run.id)
+                if outcomes:
+                    storage.save_test_outcomes(repo, run.id, outcomes)
+            except Exception:
+                logger.warning(
+                    "Test outcomes fetch failed for repo=%s run_id=%s",
                     repo,
                     run.id,
                     exc_info=True,

@@ -9,7 +9,7 @@ Current parameters:
 - `analyze_repo_runs(..., min_delta_pct=..., baseline_strategy=..., min_history=..., history_window=...)`
   - `baseline_strategy` accepted values: `median`, `mean`, `trimmed_mean`
   - `min_history` is the minimum baseline run count required to evaluate regressions
-  - `history_window` limits how many baseline runs to consider (most recent N)
+  - `history_window` limits how many recent runs to consider for baseline regressions and flaky-test detection
 - CLI (console script `ci-hunter`, entrypoint `ci_hunter.cli.main`) uses:
   - `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, `GITHUB_PRIVATE_KEY_PEM`
   - `--config` (YAML config file)

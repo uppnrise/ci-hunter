@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
 from ci_hunter.detection import (
     BASELINE_STRATEGY_MEDIAN,
     BASELINE_STRATEGY_MEAN,
     BASELINE_STRATEGY_TRIMMED_MEAN,
+    Flake,
     Regression,
     REASON_INSUFFICIENT_HISTORY,
+    detect_test_flakes,
     detect_run_duration_regressions,
 )
 from ci_hunter.storage import Storage
@@ -28,6 +30,7 @@ class AnalysisResult:
     step_timings_failed: Optional[int]
     test_timings_attempted: Optional[int]
     test_timings_failed: Optional[int]
+    flakes: list[Flake] = field(default_factory=list)
 
 
 def analyze_repo_runs(
@@ -54,6 +57,7 @@ def analyze_repo_runs(
     )
     step_samples = storage.list_step_durations(repo)
     test_samples = storage.list_test_durations(repo)
+    test_outcome_samples = storage.list_test_outcomes(repo)
     step_regressions = _detect_named_regressions(
         step_samples,
         min_delta_pct=min_delta_pct,
@@ -68,6 +72,10 @@ def analyze_repo_runs(
         min_history=min_history,
         history_window=history_window,
     )
+    flakes = detect_test_flakes(
+        test_outcome_samples,
+        history_window=history_window,
+    )
     return AnalysisResult(
         repo=repo,
         regressions=detection.regressions,
@@ -80,6 +88,7 @@ def analyze_repo_runs(
         step_timings_failed=None,
         test_timings_attempted=None,
         test_timings_failed=None,
+        flakes=flakes,
     )
 
 

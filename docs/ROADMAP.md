@@ -31,12 +31,13 @@
 27) Postgres operationalization (docker compose profile + migration smoke + CI integration workflow)
 28) Webhook listener observability (structured request metrics + reject counters)
 29) Webhook body framing hardening (reject unsupported `Transfer-Encoding`, require valid `Content-Length`)
+30) JUnit test outcome extraction + flaky test detection (markdown/json reporting)
 
 ## Planned
 
 ### Near-term (next)
 1) Provider abstraction + GitLab support
-2) Step/test change-point detection + flake detection
+2) Step/test change-point detection
 
 ### Medium-term (from Architecture)
 1) Attribution to touched files (git diff integration)

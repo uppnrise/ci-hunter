@@ -8,13 +8,14 @@ from typing import Any, Iterable, List, Optional
 from urllib.parse import urlparse
 
 from ci_hunter.github.client import WorkflowRun
-from ci_hunter.junit import TestDuration
+from ci_hunter.junit import TestDuration, TestOutcome
 from ci_hunter.steps import StepDuration
 
 
 WORKFLOW_RUNS_TABLE = "workflow_runs"
 STEP_DURATIONS_TABLE = "step_durations"
 TEST_DURATIONS_TABLE = "test_durations"
+TEST_OUTCOMES_TABLE = "test_outcomes"
 
 
 @dataclass(frozen=True)
@@ -35,6 +36,14 @@ class TestDurationSample:
     run_number: int
     test_name: str
     duration_seconds: float
+    __test__ = False
+
+
+@dataclass(frozen=True)
+class TestOutcomeSample:
+    run_number: int
+    test_name: str
+    outcome: str
     __test__ = False
 
 
@@ -194,6 +203,19 @@ class Storage:
                     run_id {run_id_type} NOT NULL,
                     test_name TEXT NOT NULL,
                     duration_seconds {duration_type} NOT NULL,
+                    PRIMARY KEY (repo, run_id, test_name),
+                    FOREIGN KEY (repo, run_id)
+                        REFERENCES {WORKFLOW_RUNS_TABLE}(repo, run_id)
+                )
+                """
+            )
+            self._backend.execute(
+                f"""
+                CREATE TABLE IF NOT EXISTS {TEST_OUTCOMES_TABLE} (
+                    repo TEXT NOT NULL,
+                    run_id {run_id_type} NOT NULL,
+                    test_name TEXT NOT NULL,
+                    outcome TEXT NOT NULL,
                     PRIMARY KEY (repo, run_id, test_name),
                     FOREIGN KEY (repo, run_id)
                         REFERENCES {WORKFLOW_RUNS_TABLE}(repo, run_id)
@@ -419,6 +441,74 @@ class Storage:
                 run_number=row[0],
                 test_name=row[1],
                 duration_seconds=row[2],
+            )
+            for row in rows
+        ]
+
+    def save_test_outcomes(
+        self,
+        repo: str,
+        run_id: int,
+        outcomes: Iterable[TestOutcome],
+    ) -> None:
+        placeholder = self._placeholder()
+        values = [
+            (
+                repo,
+                run_id,
+                outcome.name,
+                outcome.outcome,
+            )
+            for outcome in outcomes
+        ]
+        with self._lock:
+            if self.backend_name == "sqlite":
+                query = f"""
+                    INSERT OR REPLACE INTO {TEST_OUTCOMES_TABLE} (
+                        repo,
+                        run_id,
+                        test_name,
+                        outcome
+                    ) VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder})
+                """
+            else:
+                query = f"""
+                    INSERT INTO {TEST_OUTCOMES_TABLE} (
+                        repo,
+                        run_id,
+                        test_name,
+                        outcome
+                    ) VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder})
+                    ON CONFLICT (repo, run_id, test_name) DO UPDATE SET
+                        outcome = EXCLUDED.outcome
+                """
+            self._backend.executemany(query, values)
+            self._backend.commit()
+
+    def list_test_outcomes(self, repo: str) -> List[TestOutcomeSample]:
+        placeholder = self._placeholder()
+        with self._lock:
+            rows = self._backend.execute(
+                f"""
+                SELECT
+                    runs.run_number,
+                    outcomes.test_name,
+                    outcomes.outcome
+                FROM {TEST_OUTCOMES_TABLE} AS outcomes
+                JOIN {WORKFLOW_RUNS_TABLE} AS runs
+                  ON runs.repo = outcomes.repo
+                 AND runs.run_id = outcomes.run_id
+                WHERE outcomes.repo = {placeholder}
+                ORDER BY runs.run_number, outcomes.test_name
+                """,
+                (repo,),
+            )
+
+        return [
+            TestOutcomeSample(
+                run_number=row[0],
+                test_name=row[1],
+                outcome=row[2],
             )
             for row in rows
         ]

@@ -8,6 +8,7 @@ from ci_hunter.config import AppConfig, load_config
 from ci_hunter.detection import BASELINE_STRATEGY_MEDIAN
 from ci_hunter.github.auth import GitHubAppAuth
 from ci_hunter.github.artifacts import fetch_junit_durations_from_artifacts
+from ci_hunter.github.artifacts import fetch_junit_test_outcomes_from_artifacts
 from ci_hunter.github.client import GitHubActionsClient
 from ci_hunter.github.comments import post_pr_comment
 from ci_hunter.github.logs import fetch_run_step_durations
@@ -90,6 +91,7 @@ def main(
         timings_run_limit=args.timings_run_limit,
         step_fetcher=fetch_run_step_durations,
         test_fetcher=fetch_junit_durations_from_artifacts,
+        test_outcome_fetcher=fetch_junit_test_outcomes_from_artifacts,
     )
     if args.format == FORMAT_JSON:
         report = json_renderer(result)

@@ -55,9 +55,23 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("repo", "run_id", "test_name", name="pk_test_durations"),
     )
+    op.create_table(
+        "test_outcomes",
+        sa.Column("repo", sa.Text(), nullable=False),
+        sa.Column("run_id", sa.BigInteger(), nullable=False),
+        sa.Column("test_name", sa.Text(), nullable=False),
+        sa.Column("outcome", sa.Text(), nullable=False),
+        sa.ForeignKeyConstraint(
+            ["repo", "run_id"],
+            ["workflow_runs.repo", "workflow_runs.run_id"],
+            name="fk_test_outcomes_workflow_runs",
+        ),
+        sa.PrimaryKeyConstraint("repo", "run_id", "test_name", name="pk_test_outcomes"),
+    )
 
 
 def downgrade() -> None:
+    op.drop_table("test_outcomes")
     op.drop_table("test_durations")
     op.drop_table("step_durations")
     op.drop_table("workflow_runs")

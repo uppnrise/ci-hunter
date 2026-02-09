@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from ci_hunter.detection import BASELINE_STRATEGY_MEDIAN
 from ci_hunter.github.client import WorkflowRun
-from ci_hunter.junit import TestDuration
+from ci_hunter.junit import TEST_OUTCOME_FAILED, TestDuration, TestOutcome
 from ci_hunter.runner import fetch_store_analyze
 from ci_hunter.steps import StepDuration
 from ci_hunter.storage import Storage, StorageConfig
@@ -259,3 +259,52 @@ def test_fetch_store_analyze_counts_empty_timings_as_missing():
     assert result.step_timings_failed == 1
     assert result.test_timings_attempted == 1
     assert result.test_timings_failed == 1
+
+
+def test_fetch_store_analyze_fetches_outcomes_when_only_outcome_fetcher_set():
+    storage = Storage(StorageConfig(database_url=":memory:"))
+    runs = [
+        WorkflowRun(
+            id=RUN_ID_BASELINE,
+            run_number=RUN_NUMBER_BASELINE,
+            status=STATUS_COMPLETED,
+            conclusion=CONCLUSION_SUCCESS,
+            created_at=CREATED_AT,
+            updated_at=UPDATED_AT_BASELINE,
+            head_sha=HEAD_SHA_BASELINE,
+        ),
+        WorkflowRun(
+            id=RUN_ID_CURRENT,
+            run_number=RUN_NUMBER_CURRENT,
+            status=STATUS_COMPLETED,
+            conclusion=CONCLUSION_SUCCESS,
+            created_at=CREATED_AT,
+            updated_at=UPDATED_AT_CURRENT,
+            head_sha=HEAD_SHA_CURRENT,
+        ),
+    ]
+
+    def client_factory(token: str) -> DummyClient:
+        return DummyClient(runs)
+
+    outcome_calls: list[int] = []
+
+    def outcome_fetcher(token: str, repo: str, run_id: int) -> list[TestOutcome]:
+        outcome_calls.append(run_id)
+        return [TestOutcome(name="tests.alpha::test_x", outcome=TEST_OUTCOME_FAILED)]
+
+    fetch_store_analyze(
+        auth=DummyAuth(),
+        client_factory=client_factory,
+        storage=storage,
+        repo=REPO,
+        min_delta_pct=MIN_DELTA_PCT,
+        baseline_strategy=BASELINE_STRATEGY_MEDIAN,
+        test_outcome_fetcher=outcome_fetcher,
+    )
+
+    assert outcome_calls == [RUN_ID_BASELINE, RUN_ID_CURRENT]
+    assert [sample.run_number for sample in storage.list_test_outcomes(REPO)] == [
+        RUN_NUMBER_BASELINE,
+        RUN_NUMBER_CURRENT,
+    ]

@@ -18,3 +18,4 @@ def test_initial_migration_defines_core_tables():
     assert "workflow_runs" in initial_text
     assert "step_durations" in initial_text
     assert "test_durations" in initial_text
+    assert "test_outcomes" in initial_text

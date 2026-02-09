@@ -1,13 +1,16 @@
 from __future__ import annotations
 
-from ci_hunter.analyze import AnalysisResult
 import json
 
+from ci_hunter.analyze import AnalysisResult
+from ci_hunter.detection import Flake
 
 SECTION_RUN = "Run regressions"
 SECTION_STEP = "Step regressions"
 SECTION_TEST = "Test regressions"
+SECTION_FLAKES = "Flaky tests"
 SECTION_NONE = "No regressions detected"
+SECTION_NO_FLAKES = "No flaky tests detected"
 REASON_PREFIX = "Reason: "
 MISSING_STEP_DATA = "Step data missing"
 MISSING_TEST_DATA = "Test data missing"
@@ -40,6 +43,7 @@ def render_markdown_report(result: AnalysisResult) -> str:
             ),
         )
     )
+    lines.extend(_render_flake_section(result.flakes))
     return "\n".join(lines)
 
 
@@ -56,6 +60,15 @@ def render_json_report(result: AnalysisResult) -> str:
         "step_timings_failed": result.step_timings_failed,
         "test_timings_attempted": result.test_timings_attempted,
         "test_timings_failed": result.test_timings_failed,
+        "flakes": [
+            {
+                "test_name": flake.test_name,
+                "fail_rate": flake.fail_rate,
+                "failures": flake.failures,
+                "total_runs": flake.total_runs,
+            }
+            for flake in result.flakes
+        ],
     }
     return json.dumps(payload)
 
@@ -104,3 +117,17 @@ def _missing_data_note(prefix: str, attempted: int | None, failed: int | None) -
     if attempted <= 0 or failed <= 0:
         return None
     return f"{prefix} for {failed}/{attempted} runs"
+
+
+def _render_flake_section(flakes: list[Flake]) -> list[str]:
+    lines = [f"## {SECTION_FLAKES}"]
+    if not flakes:
+        lines.append(f"- {SECTION_NO_FLAKES}")
+        return lines
+    for flake in flakes:
+        fail_pct = flake.fail_rate * 100
+        lines.append(
+            f"- {flake.test_name}: "
+            f"{flake.failures}/{flake.total_runs} failures ({fail_pct:.1f}% fail rate)"
+        )
+    return lines

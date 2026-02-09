@@ -1,5 +1,5 @@
 from ci_hunter.analyze import AnalysisResult
-from ci_hunter.detection import Regression
+from ci_hunter.detection import Flake, Regression
 from ci_hunter.report import render_markdown_report
 
 
@@ -23,6 +23,14 @@ def test_render_markdown_report():
         step_timings_failed=3,
         test_timings_attempted=10,
         test_timings_failed=4,
+        flakes=[
+            Flake(
+                test_name="tests.alpha::test_x",
+                fail_rate=0.4,
+                failures=2,
+                total_runs=5,
+            )
+        ],
     )
 
     report = render_markdown_report(result)
@@ -35,3 +43,5 @@ def test_render_markdown_report():
     assert "+50.0%" in report
     assert "Step data missing for 3/10 runs" in report
     assert "Test data missing for 4/10 runs" in report
+    assert "Flaky tests" in report
+    assert "tests.alpha::test_x" in report

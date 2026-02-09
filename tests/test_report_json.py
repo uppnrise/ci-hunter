@@ -1,7 +1,7 @@
 import json
 
 from ci_hunter.analyze import AnalysisResult
-from ci_hunter.detection import Regression
+from ci_hunter.detection import Flake, Regression
 from ci_hunter.report import render_json_report
 
 
@@ -39,6 +39,14 @@ def test_render_json_report():
         step_timings_failed=3,
         test_timings_attempted=10,
         test_timings_failed=4,
+        flakes=[
+            Flake(
+                test_name="tests.alpha::test_x",
+                fail_rate=0.4,
+                failures=2,
+                total_runs=5,
+            )
+        ],
     )
 
     report = render_json_report(result)
@@ -53,3 +61,4 @@ def test_render_json_report():
     assert payload["step_timings_failed"] == 3
     assert payload["test_timings_attempted"] == 10
     assert payload["test_timings_failed"] == 4
+    assert payload["flakes"][0]["test_name"] == "tests.alpha::test_x"

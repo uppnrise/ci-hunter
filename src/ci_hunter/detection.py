@@ -4,6 +4,8 @@ from dataclasses import dataclass
 import statistics
 from typing import Iterable, List, Optional
 
+from ci_hunter.junit import TEST_OUTCOME_FAILED, TEST_OUTCOME_PASSED
+
 
 @dataclass(frozen=True)
 class Regression:
@@ -27,6 +29,14 @@ DEFAULT_TRIM_RATIO = 0.1
 class DetectionResult:
     regressions: List[Regression]
     reason: Optional[str]
+
+
+@dataclass(frozen=True)
+class Flake:
+    test_name: str
+    fail_rate: float
+    failures: int
+    total_runs: int
 
 
 def detect_run_duration_regressions(
@@ -98,3 +108,66 @@ def _compute_baseline(
         return sum(trimmed) / len(trimmed)
 
     raise ValueError(f"Unknown baseline_strategy: {strategy}")
+
+
+def detect_test_flakes(
+    samples: Iterable[object],
+    *,
+    min_fail_rate: float = 0.2,
+    min_failures: int = 2,
+    min_runs: int = 5,
+    history_window: int | None = None,
+) -> list[Flake]:
+    if not 0 <= min_fail_rate <= 1:
+        raise ValueError("min_fail_rate must be in [0, 1]")
+    if min_failures < 1:
+        raise ValueError("min_failures must be >= 1")
+    if min_runs < 1:
+        raise ValueError("min_runs must be >= 1")
+    if history_window is not None and history_window < 1:
+        raise ValueError("history_window must be >= 1 when set")
+
+    by_name: dict[str, list[tuple[int, str]]] = {}
+    for sample in samples:
+        test_name = getattr(sample, "test_name")
+        run_number = getattr(sample, "run_number")
+        outcome = str(getattr(sample, "outcome")).strip().lower()
+        by_name.setdefault(test_name, []).append((run_number, outcome))
+
+    flakes: list[Flake] = []
+    for test_name, entries in by_name.items():
+        entries.sort(key=lambda item: item[0])
+        outcomes = [outcome for _, outcome in entries]
+        if history_window is not None:
+            outcomes = outcomes[-history_window:]
+
+        considered = [
+            outcome
+            for outcome in outcomes
+            if outcome in {TEST_OUTCOME_PASSED, TEST_OUTCOME_FAILED}
+        ]
+        if len(considered) < min_runs:
+            continue
+
+        failures = sum(1 for outcome in considered if outcome == TEST_OUTCOME_FAILED)
+        passes = len(considered) - failures
+        if failures < min_failures:
+            continue
+        if passes == 0:
+            # A consistently failing test is deterministic, not flaky.
+            continue
+
+        fail_rate = failures / len(considered)
+        if fail_rate < min_fail_rate:
+            continue
+        flakes.append(
+            Flake(
+                test_name=test_name,
+                fail_rate=fail_rate,
+                failures=failures,
+                total_runs=len(considered),
+            )
+        )
+
+    flakes.sort(key=lambda flake: (-flake.fail_rate, -flake.failures, flake.test_name))
+    return flakes
