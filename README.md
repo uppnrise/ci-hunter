@@ -77,6 +77,7 @@ The console script is installed as `ci-hunter` and wraps `ci_hunter.cli.main`. I
 
 Additional console scripts:
 - `ci-hunter-webhook` (local webhook payload runner)
+- `ci-hunter-webhook-listener` (HTTP webhook listener that enqueues JSONL jobs)
 - `ci-hunter-scheduler` (append jobs to a JSONL queue file)
 - `ci-hunter-worker` (process jobs from a JSONL queue file)
 
@@ -101,9 +102,8 @@ main(["--repo", "owner/repo", "--dry-run", "--format", "md"])
 ## Webhooks (local testing)
 
 You can run the webhook pipeline locally by passing a GitHub-style payload file into
-the CLI bridge. There is also a stdlib HTTP adapter (`serve_http`) under
-`ci_hunter.webhook_httpd_httpserver` for embedding in a process, but there is not yet a
-dedicated long-running webhook server CLI command.
+the CLI bridge. You can also run a local HTTP listener that enqueues jobs into
+the JSONL queue used by `ci-hunter-worker`.
 
 ```bash
 python -m ci_hunter.webhook_cmd \
@@ -111,6 +111,26 @@ python -m ci_hunter.webhook_cmd \
   --payload-file payload.json \
   --dry-run
 ```
+
+```bash
+ci-hunter-webhook-listener \
+  --queue-file queue.jsonl \
+  --host 127.0.0.1 \
+  --port 8000
+```
+
+Or process a single request and exit:
+
+```bash
+ci-hunter-webhook-listener \
+  --queue-file queue.jsonl \
+  --once
+```
+
+Listener defaults:
+- `--host` defaults to `127.0.0.1` (or `CI_HUNTER_WEBHOOK_HOST`).
+- `--port` defaults to `8000` (or `CI_HUNTER_WEBHOOK_PORT`).
+- `--port` must be in range `1..65535`.
 
 Minimal `payload.json` example:
 

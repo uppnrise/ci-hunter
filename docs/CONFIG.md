@@ -17,6 +17,10 @@ Current parameters:
     `--min-delta-pct`, `--baseline-strategy`, `--db`, `--timings-run-limit`,
     `--min-history`, `--history-window`
   - `--format {md,json}`, `--dry-run`, `--output-file`, `--no-comment`
+- Webhook listener CLI (console script `ci-hunter-webhook-listener`, entrypoint
+  `ci_hunter.webhook_listener_cmd.main`) uses:
+  - `--queue-file` (required), `--host`, `--port`, `--once`
+  - env defaults: `CI_HUNTER_WEBHOOK_HOST`, `CI_HUNTER_WEBHOOK_PORT`
 
 This file lists the supported env vars, YAML keys, and CLI flags.
 
@@ -29,3 +33,6 @@ Notes:
 - `min_history` and `history_window` must be positive integers when set.
 - GitHub API calls use a small retry/backoff policy for transient errors (5xx/429).
 - Config supports `output_file` and `no_comment` if you prefer file output without posting.
+- `CI_HUNTER_WEBHOOK_PORT` must be parseable as an integer in range `1..65535`;
+  otherwise it falls back to default (`8000`).
+- `--port` enforces range `1..65535`.

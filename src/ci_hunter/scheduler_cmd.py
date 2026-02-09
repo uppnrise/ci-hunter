@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import argparse
-import json
 import os
-from pathlib import Path
 from typing import TextIO
 
+from ci_hunter.job_queue_file import append_job
 from ci_hunter.queue import AnalysisJob, InMemoryJobQueue
-from ci_hunter.file_lock import locked_file
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -42,7 +40,7 @@ def main(
     if queue is not None:
         queue.enqueue(job)
     else:
-        _append_job(args.queue_file, job)
+        append_job(args.queue_file, job)
         out.write(f"enqueued job to {args.queue_file}\n")
     return 0
 
@@ -59,16 +57,3 @@ def _non_empty_string(value: str) -> str:
     if not text:
         raise argparse.ArgumentTypeError("repo must be a non-empty string")
     return text
-
-
-def _append_job(path: str, job: AnalysisJob) -> None:
-    payload = {
-        "repo": job.repo,
-        "pr_number": job.pr_number,
-        "commit": job.commit,
-        "branch": job.branch,
-    }
-    path_obj = Path(path)
-    path_obj.parent.mkdir(parents=True, exist_ok=True)
-    with locked_file(path_obj, "a") as handle:
-        handle.write(json.dumps(payload) + "\n")

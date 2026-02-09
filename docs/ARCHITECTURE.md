@@ -15,6 +15,7 @@ End-to-end blueprint for an agent that detects CI bottlenecks, attributes likely
 - Webhook groundwork: pull_request parsing and a local webhook-to-CLI pipeline
 - Webhook HTTP handler building blocks
 - Webhook stdlib HTTP server adapter (`serve_http`) wired to handler stack
+- Webhook listener CLI (`ci-hunter-webhook-listener`) with queue-file enqueue flow
 - Queue/worker groundwork: in-process enqueue + worker loop to call the CLI
 - Scheduler groundwork: JSONL queue file enqueue CLI
 - Worker groundwork: JSONL queue file processing CLI

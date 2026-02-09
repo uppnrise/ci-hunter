@@ -25,11 +25,12 @@
 21) Cross-platform queue file locking (fcntl/msvcrt)
 22) Webhook HTTP handler building blocks
 23) Stdlib HTTP webhook adapter (`serve_http`) wired to webhook handler stack
+24) Webhook listener CLI lifecycle (`--once`, `serve_forever`, graceful shutdown, host/port config)
 
 ## Planned
 
 ### Near-term (next)
-1) Webhook listener CLI/process lifecycle (serve-forever, shutdown, config-driven host/port)
+1) Webhook listener hardening (signature verification, input limits, request auth controls)
 2) Postgres storage + migrations
 3) Provider abstraction + GitLab support
 4) Step/test change-point detection + flake detection

@@ -23,6 +23,8 @@ stand-in for a persistent queue. Each line is one job.
 ## Processing behavior
 
 - `ci-hunter-scheduler` appends one JSON object per line to the queue file.
+- `ci-hunter-webhook-listener` appends jobs in the same JSONL format when it
+  receives supported pull_request webhook events.
 - `ci-hunter-worker` reads the file, processes up to `--max-jobs`, then rewrites
   the file with any remaining jobs.
 - Invalid JSON lines are skipped with a warning.

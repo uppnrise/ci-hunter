@@ -74,7 +74,7 @@ def test_scheduler_cmd_uses_file_lock(tmp_path, monkeypatch):
     queue_path = tmp_path / "queue.jsonl"
     calls: list[Path] = []
 
-    import ci_hunter.scheduler_cmd as scheduler_cmd
+    import ci_hunter.job_queue_file as job_queue_file
 
     from contextlib import contextmanager
 
@@ -84,7 +84,7 @@ def test_scheduler_cmd_uses_file_lock(tmp_path, monkeypatch):
         with open(path, mode, encoding="utf-8") as handle:
             yield handle
 
-    monkeypatch.setattr(scheduler_cmd, "locked_file", fake_locked_file)
+    monkeypatch.setattr(job_queue_file, "locked_file", fake_locked_file)
 
     exit_code = main(
         [
