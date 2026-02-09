@@ -51,6 +51,9 @@ Notes:
   - `401` for invalid/missing signature or auth token (when enabled)
   - `413` for payloads larger than configured `CI_HUNTER_WEBHOOK_MAX_BODY_BYTES`
 - Listener rejects oversize requests early when `Content-Length` exceeds the configured limit.
+- Listener observability logs:
+  - per request: `webhook_request method=<...> status=<...> outcome=<...> reason=<...> reject_count=<...> total_count=<...>`
+  - on shutdown: `webhook_metrics total=<...> accepted=<...> rejected=<...> reject_reasons=<...>`
 - Migration scaffold is available via Alembic (`alembic.ini`, `migrations/`).
 - Alembic runtime DB URL can be overridden via `CI_HUNTER_ALEMBIC_URL` (useful for
   migration smoke tests and ephemeral environments).
