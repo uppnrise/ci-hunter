@@ -49,8 +49,13 @@ Notes:
   - auth token: `X-CI-HUNTER-TOKEN`
 - Listener hardening status codes:
   - `401` for invalid/missing signature or auth token (when enabled)
+  - `400` for unsupported `Transfer-Encoding`
+  - `411` for missing/invalid `Content-Length` on POST requests
   - `413` for payloads larger than configured `CI_HUNTER_WEBHOOK_MAX_BODY_BYTES`
-- Listener rejects oversize requests early when `Content-Length` exceeds the configured limit.
+- Listener request body rules:
+  - unsupported transfer encoding is rejected before webhook dispatch
+  - POST requests must include valid `Content-Length`
+  - oversize requests are rejected early when `Content-Length` exceeds the configured limit
 - Listener observability logs:
   - per request: `webhook_request method=<...> status=<...> outcome=<...> reason=<...> reject_count=<...> total_count=<...>`
   - on shutdown: `webhook_metrics total=<...> accepted=<...> rejected=<...> reject_reasons=<...>`

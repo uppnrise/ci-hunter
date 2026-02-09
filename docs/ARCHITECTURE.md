@@ -16,7 +16,7 @@ End-to-end blueprint for an agent that detects CI bottlenecks, attributes likely
 - Webhook HTTP handler building blocks
 - Webhook stdlib HTTP server adapter (`serve_http`) wired to handler stack
 - Webhook listener CLI (`ci-hunter-webhook-listener`) with queue-file enqueue flow
-- Webhook listener hardening: signature check, auth token gate, and body size cap
+- Webhook listener hardening: signature check, auth token gate, body size cap, and body framing guards (`Transfer-Encoding` rejection + `Content-Length` requirement)
 - Webhook listener observability: structured request outcome logs and reject counters
 - Queue/worker groundwork: in-process enqueue + worker loop to call the CLI
 - Scheduler groundwork: JSONL queue file enqueue CLI
@@ -79,7 +79,7 @@ End-to-end blueprint for an agent that detects CI bottlenecks, attributes likely
 
 ## 4) Data & Storage
 - **LangGraph checkpoints**: checkpointer persists graph state (InMemory for dev; Postgres recommended for prod) keyed by `thread_id` so runs can resume/replay.
-- **History DB**: `runs`, `steps`, `tests`, `detections`, `flakes` tables; Postgres for prod, SQLite for dev; migrations via `alembic` or simple schema bootstrap.
+- **History DB**: `runs`, `steps`, `tests`, `detections`, `flakes` tables; Postgres for prod, SQLite for dev; schema managed via `alembic` in production (SQLite bootstrap remains acceptable for local development).
 - **Artifacts**: store raw logs/JUnit locally or S3-compatible; path recorded in state.
 - **History policy**: keep rolling window (e.g., last 200 runs per branch) plus aggregates for baselines; prune old runs to cap size.
 - **Caching**: memoize CI fetches per run id; cache prompts/results optionally for cost control.

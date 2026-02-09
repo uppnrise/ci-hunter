@@ -37,18 +37,43 @@ def serve_http(
             log_fn(format % args)
 
         def _handle_with_method(self, method: str) -> None:
-            content_length = _parse_content_length(self.headers.get("Content-Length"))
-            if content_length > max_body_bytes:
-                status = HTTPStatus.REQUEST_ENTITY_TOO_LARGE
-                payload = b"payload too large"
-                log_fn(metrics.record_line(method=method, status=status, payload=payload))
-                self.send_response(status.value)
-                self.send_header("Content-Type", "text/plain; charset=utf-8")
-                self.send_header("Content-Length", str(len(payload)))
-                self.end_headers()
-                self.wfile.write(payload)
-                return
-            body = self.rfile.read(content_length) if content_length else b""
+            if method == "POST":
+                transfer_encoding = self.headers.get("Transfer-Encoding")
+                if _has_unsupported_transfer_encoding(transfer_encoding):
+                    status = HTTPStatus.BAD_REQUEST
+                    payload = b"unsupported transfer encoding"
+                    log_fn(metrics.record_line(method=method, status=status, payload=payload))
+                    self.send_response(status.value)
+                    self.send_header("Content-Type", "text/plain; charset=utf-8")
+                    self.send_header("Content-Length", str(len(payload)))
+                    self.end_headers()
+                    self.wfile.write(payload)
+                    return
+
+                content_length = _parse_content_length(self.headers.get("Content-Length"))
+                if content_length is None:
+                    status = HTTPStatus.LENGTH_REQUIRED
+                    payload = b"missing content-length"
+                    log_fn(metrics.record_line(method=method, status=status, payload=payload))
+                    self.send_response(status.value)
+                    self.send_header("Content-Type", "text/plain; charset=utf-8")
+                    self.send_header("Content-Length", str(len(payload)))
+                    self.end_headers()
+                    self.wfile.write(payload)
+                    return
+                if content_length > max_body_bytes:
+                    status = HTTPStatus.REQUEST_ENTITY_TOO_LARGE
+                    payload = b"payload too large"
+                    log_fn(metrics.record_line(method=method, status=status, payload=payload))
+                    self.send_response(status.value)
+                    self.send_header("Content-Type", "text/plain; charset=utf-8")
+                    self.send_header("Content-Length", str(len(payload)))
+                    self.end_headers()
+                    self.wfile.write(payload)
+                    return
+                body = self.rfile.read(content_length) if content_length else b""
+            else:
+                body = b""
             status, payload = handle_incoming(
                 method=method,
                 headers=self.headers,
@@ -68,14 +93,23 @@ def serve_http(
     return WebhookHTTPServer((host, port), WebhookHandler)
 
 
-def _parse_content_length(value: str | None) -> int:
+def _parse_content_length(value: str | None) -> int | None:
     if value is None:
-        return 0
+        return None
     try:
         length = int(value)
     except ValueError:
-        return 0
-    return max(length, 0)
+        return None
+    if length < 0:
+        return None
+    return length
+
+
+def _has_unsupported_transfer_encoding(value: str | None) -> bool:
+    if value is None:
+        return False
+    normalized = value.strip().lower()
+    return normalized not in {"", "identity"}
 
 
 @dataclass

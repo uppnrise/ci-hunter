@@ -30,13 +30,13 @@
 26) Postgres storage backend support in `Storage` + Alembic initial migration scaffold
 27) Postgres operationalization (docker compose profile + migration smoke + CI integration workflow)
 28) Webhook listener observability (structured request metrics + reject counters)
+29) Webhook body framing hardening (reject unsupported `Transfer-Encoding`, require valid `Content-Length`)
 
 ## Planned
 
 ### Near-term (next)
 1) Provider abstraction + GitLab support
 2) Step/test change-point detection + flake detection
-3) Webhook request-body hardening beyond `Content-Length` (streaming/chunked-body guard)
 
 ### Medium-term (from Architecture)
 1) Attribution to touched files (git diff integration)
@@ -44,3 +44,4 @@
 3) Slack/Teams notifications + GitHub check-runs
 4) Artifact/log storage in object storage (S3-compatible)
 5) Observability: metrics/tracing, rate limit handling, and runbook
+6) Optional chunked webhook support behind feature flag (`CI_HUNTER_WEBHOOK_ALLOW_CHUNKED`) with bounded streaming read limits, plus reverse-proxy normalization guidance

@@ -163,6 +163,8 @@ Listener defaults:
 - Rejection behavior:
   - invalid/missing auth or signature returns `401`.
   - oversized request body returns `413`.
+  - unsupported `Transfer-Encoding` returns `400`.
+  - missing/invalid `Content-Length` on POST returns `411`.
   - when `Content-Length` exceeds the configured limit, the listener rejects early without dispatching to the webhook handler.
 - Observability:
   - listener emits structured request logs with `method`, `status`, `outcome`, `reason`, and per-reason `reject_count`.
