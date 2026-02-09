@@ -105,3 +105,66 @@ def test_httpserver_rejects_oversize_before_dispatch(monkeypatch):
     assert status == 413
     assert payload == b"payload too large"
     assert called["count"] == 0
+
+
+def test_httpserver_logs_structured_request_outcomes():
+    logs: list[str] = []
+
+    server = serve_http(
+        host="127.0.0.1",
+        port=0,
+        enqueue_handler=lambda _e, _p: True,
+        log_fn=logs.append,
+    )
+    thread = threading.Thread(target=server.handle_request, daemon=True)
+    thread.start()
+
+    status_ok, _ = _send_request(
+        server,
+        "POST",
+        body="{}",
+        headers={"X-GitHub-Event": "pull_request"},
+    )
+
+    thread.join(timeout=1)
+    thread = threading.Thread(target=server.handle_request, daemon=True)
+    thread.start()
+
+    status_bad, _ = _send_request(server, "POST", body="{}", headers={})
+
+    thread.join(timeout=1)
+    server.server_close()
+
+    assert status_ok == 200
+    assert status_bad == 400
+    metric_lines = [line for line in logs if line.startswith("webhook_request ")]
+    assert any("outcome=accepted" in line and "status=200" in line for line in metric_lines)
+    assert any(
+        "outcome=rejected" in line and "reason=missing_event" in line and "status=400" in line
+        for line in metric_lines
+    )
+
+
+def test_httpserver_increments_reject_counters():
+    logs: list[str] = []
+
+    server = serve_http(
+        host="127.0.0.1",
+        port=0,
+        enqueue_handler=lambda _e, _p: True,
+        log_fn=logs.append,
+    )
+
+    for _ in range(2):
+        thread = threading.Thread(target=server.handle_request, daemon=True)
+        thread.start()
+        _send_request(server, "POST", body="{}", headers={})
+        thread.join(timeout=1)
+
+    server.server_close()
+
+    metric_lines = [line for line in logs if line.startswith("webhook_request ")]
+    reject_lines = [line for line in metric_lines if "reason=missing_event" in line]
+    assert len(reject_lines) == 2
+    assert "reject_count=1" in reject_lines[0]
+    assert "reject_count=2" in reject_lines[1]
