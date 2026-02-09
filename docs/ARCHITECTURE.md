@@ -23,6 +23,7 @@ End-to-end blueprint for an agent that detects CI bottlenecks, attributes likely
 - Queue schema: JSONL format documented in `docs/QUEUE.md`
 - Queue file locking: best-effort cross-platform lock helper
 - Storage foundation: SQLite + PostgreSQL backend support, with Alembic migration scaffold
+- Postgres operationalization: local docker compose profile + CI migration/integration workflow
 
 ## 0) Scope and Modes
 - **Use cases**: PR regression commenting, scheduled branch monitoring, ChatOps queries, local dry-runs.

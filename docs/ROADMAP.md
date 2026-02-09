@@ -28,15 +28,15 @@
 24) Webhook listener CLI lifecycle (`--once`, `serve_forever`, graceful shutdown, host/port config)
 25) Webhook listener hardening (signature verification, body size limit, auth token)
 26) Postgres storage backend support in `Storage` + Alembic initial migration scaffold
+27) Postgres operationalization (docker compose profile + migration smoke + CI integration workflow)
 
 ## Planned
 
 ### Near-term (next)
-1) Postgres operationalization (containerized local DB profile + integration tests)
-2) Provider abstraction + GitLab support
-3) Step/test change-point detection + flake detection
-4) Webhook listener observability (structured request metrics + reject counters)
-5) Webhook request-body hardening beyond `Content-Length` (streaming/chunked-body guard)
+1) Provider abstraction + GitLab support
+2) Step/test change-point detection + flake detection
+3) Webhook listener observability (structured request metrics + reject counters)
+4) Webhook request-body hardening beyond `Content-Length` (streaming/chunked-body guard)
 
 ### Medium-term (from Architecture)
 1) Attribution to touched files (git diff integration)

@@ -37,6 +37,16 @@ Migration scaffold is included via Alembic:
 alembic upgrade head
 ```
 
+Local Postgres profile (for integration testing):
+
+```bash
+docker compose -f docker-compose.postgres.yml up -d
+export CI_HUNTER_POSTGRES_TEST_URL=postgresql://postgres:postgres@127.0.0.1:5433/ci_hunter_test
+CI_HUNTER_ALEMBIC_URL="$CI_HUNTER_POSTGRES_TEST_URL" alembic upgrade head
+pytest -q tests/integration/test_postgres_integration.py
+docker compose -f docker-compose.postgres.yml down
+```
+
 ## Quick usage (current API)
 
 ```python

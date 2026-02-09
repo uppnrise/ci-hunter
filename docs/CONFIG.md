@@ -52,3 +52,6 @@ Notes:
   - `413` for payloads larger than configured `CI_HUNTER_WEBHOOK_MAX_BODY_BYTES`
 - Listener rejects oversize requests early when `Content-Length` exceeds the configured limit.
 - Migration scaffold is available via Alembic (`alembic.ini`, `migrations/`).
+- Alembic runtime DB URL can be overridden via `CI_HUNTER_ALEMBIC_URL` (useful for
+  migration smoke tests and ephemeral environments).
+- Postgres integration tests use `CI_HUNTER_POSTGRES_TEST_URL`.
