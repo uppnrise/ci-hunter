@@ -4,7 +4,7 @@ CI Hunter is a small Python codebase for detecting CI run slowdowns. It currentl
 
 - fetches GitHub Actions workflow runs, logs, and artifacts (via a GitHub App installation token),
 - parses step timings (job-prefixed) and JUnit test durations (for recent runs),
-- stores runs in SQLite (default) or PostgreSQL via `--db`/`database_url`,
+- stores workflow runs, step timings, and test timings in SQLite (default) or PostgreSQL via `--db`/`database_url`,
 - computes run-duration regressions with configurable baselines,
 - renders markdown/JSON reports (with per-run/step/test sections and missing-data counts) and can post PR comments.
 

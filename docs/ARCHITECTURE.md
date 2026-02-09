@@ -4,7 +4,7 @@ End-to-end blueprint for an agent that detects CI bottlenecks, attributes likely
 
 ## Status (Current Implementation)
 - GitHub Actions client + GitHub App auth
-- SQLite storage for workflow runs
+- Storage layer for workflow runs, step durations, and test durations (SQLite by default, PostgreSQL backend support available)
 - Run-duration regression detection (configurable baselines)
 - Step timing parsing from run logs
 - JUnit test duration parsing from artifacts
