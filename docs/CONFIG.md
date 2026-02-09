@@ -21,6 +21,10 @@ Current parameters:
   `ci_hunter.webhook_listener_cmd.main`) uses:
   - `--queue-file` (required), `--host`, `--port`, `--once`
   - env defaults: `CI_HUNTER_WEBHOOK_HOST`, `CI_HUNTER_WEBHOOK_PORT`
+  - optional hardening env vars:
+    - `CI_HUNTER_WEBHOOK_SECRET` (HMAC secret for `X-Hub-Signature-256`)
+    - `CI_HUNTER_WEBHOOK_AUTH_TOKEN` (requires `X-CI-HUNTER-TOKEN`)
+    - `CI_HUNTER_WEBHOOK_MAX_BODY_BYTES` (request body size limit)
 
 This file lists the supported env vars, YAML keys, and CLI flags.
 
@@ -36,3 +40,12 @@ Notes:
 - `CI_HUNTER_WEBHOOK_PORT` must be parseable as an integer in range `1..65535`;
   otherwise it falls back to default (`8000`).
 - `--port` enforces range `1..65535`.
+- `CI_HUNTER_WEBHOOK_MAX_BODY_BYTES` must be a positive integer; invalid values
+  fall back to default (`1048576`).
+- Listener hardening headers:
+  - signature: `X-Hub-Signature-256` with `sha256=<hmac>`
+  - auth token: `X-CI-HUNTER-TOKEN`
+- Listener hardening status codes:
+  - `401` for invalid/missing signature or auth token (when enabled)
+  - `413` for payloads larger than configured `CI_HUNTER_WEBHOOK_MAX_BODY_BYTES`
+- Listener rejects oversize requests early when `Content-Length` exceeds the configured limit.

@@ -131,6 +131,14 @@ Listener defaults:
 - `--host` defaults to `127.0.0.1` (or `CI_HUNTER_WEBHOOK_HOST`).
 - `--port` defaults to `8000` (or `CI_HUNTER_WEBHOOK_PORT`).
 - `--port` must be in range `1..65535`.
+- Request hardening env vars:
+  - `CI_HUNTER_WEBHOOK_SECRET` enables GitHub `X-Hub-Signature-256` validation.
+  - `CI_HUNTER_WEBHOOK_AUTH_TOKEN` requires `X-CI-HUNTER-TOKEN` header match.
+  - `CI_HUNTER_WEBHOOK_MAX_BODY_BYTES` caps request size (default `1048576`).
+- Rejection behavior:
+  - invalid/missing auth or signature returns `401`.
+  - oversized request body returns `413`.
+  - when `Content-Length` exceeds the configured limit, the listener rejects early without dispatching to the webhook handler.
 
 Minimal `payload.json` example:
 

@@ -18,7 +18,7 @@ def test_handle_incoming_returns_status_and_body():
 def test_handle_incoming_returns_error_when_no_response(monkeypatch):
     import ci_hunter.webhook_httpd_cli as webhook_httpd_cli
 
-    def fake_builder(*, enqueue_handler):
+    def fake_builder(*, enqueue_handler, max_body_bytes, shared_secret, auth_token):
         def handler(*, method, headers, body, respond):
             return None
 

@@ -12,6 +12,9 @@ def handle_httpd_request(
     headers: Mapping[str, str],
     body_bytes: bytes,
     enqueue_handler: Callable[[str, dict[str, Any]], bool],
+    max_body_bytes: int = 1024 * 1024,
+    shared_secret: str | None = None,
+    auth_token: str | None = None,
 ) -> Tuple[HTTPStatus, bytes]:
     if method.upper() != "POST":
         return HTTPStatus.METHOD_NOT_ALLOWED, b"method not allowed"
@@ -20,4 +23,7 @@ def handle_httpd_request(
         headers=headers,
         body_bytes=body_bytes,
         enqueue_handler=enqueue_handler,
+        max_body_bytes=max_body_bytes,
+        shared_secret=shared_secret,
+        auth_token=auth_token,
     )

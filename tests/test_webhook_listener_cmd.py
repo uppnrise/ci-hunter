@@ -41,10 +41,13 @@ def test_webhook_listener_once_processes_single_request(tmp_path):
         def server_close(self):
             self.closed = True
 
-    def factory(*, host, port, enqueue_handler, log_fn):
+    def factory(*, host, port, enqueue_handler, log_fn, shared_secret, auth_token, max_body_bytes):
         captured["host"] = host
         captured["port"] = port
         captured["log_fn"] = log_fn
+        captured["shared_secret"] = shared_secret
+        captured["auth_token"] = auth_token
+        captured["max_body_bytes"] = max_body_bytes
         server = FakeServer(enqueue_handler)
         captured["server"] = server
         return server
@@ -102,7 +105,7 @@ def test_webhook_listener_serve_forever_and_graceful_shutdown(tmp_path):
 
     server = FakeServer()
 
-    def factory(*, host, port, enqueue_handler, log_fn):
+    def factory(*, host, port, enqueue_handler, log_fn, shared_secret, auth_token, max_body_bytes):
         return server
 
     output = io.StringIO()
@@ -130,6 +133,9 @@ def test_webhook_listener_uses_env_defaults(tmp_path, monkeypatch):
     queue_path = tmp_path / "queue.jsonl"
     monkeypatch.setenv("CI_HUNTER_WEBHOOK_HOST", "0.0.0.0")
     monkeypatch.setenv("CI_HUNTER_WEBHOOK_PORT", "9999")
+    monkeypatch.setenv("CI_HUNTER_WEBHOOK_SECRET", "secret123")
+    monkeypatch.setenv("CI_HUNTER_WEBHOOK_AUTH_TOKEN", "token123")
+    monkeypatch.setenv("CI_HUNTER_WEBHOOK_MAX_BODY_BYTES", "2048")
     captured = {}
 
     class FakeServer:
@@ -144,9 +150,12 @@ def test_webhook_listener_uses_env_defaults(tmp_path, monkeypatch):
         def server_close(self):
             return None
 
-    def factory(*, host, port, enqueue_handler, log_fn):
+    def factory(*, host, port, enqueue_handler, log_fn, shared_secret, auth_token, max_body_bytes):
         captured["host"] = host
         captured["port"] = port
+        captured["shared_secret"] = shared_secret
+        captured["auth_token"] = auth_token
+        captured["max_body_bytes"] = max_body_bytes
         return FakeServer()
 
     exit_code = main(
@@ -158,6 +167,9 @@ def test_webhook_listener_uses_env_defaults(tmp_path, monkeypatch):
     assert exit_code == 0
     assert captured["host"] == "0.0.0.0"
     assert captured["port"] == 9999
+    assert captured["shared_secret"] == "secret123"
+    assert captured["auth_token"] == "token123"
+    assert captured["max_body_bytes"] == 2048
 
 
 def test_webhook_listener_rejects_out_of_range_port(tmp_path):
@@ -193,7 +205,7 @@ def test_webhook_listener_env_port_out_of_range_falls_back_default(tmp_path, mon
         def server_close(self):
             return None
 
-    def factory(*, host, port, enqueue_handler, log_fn):
+    def factory(*, host, port, enqueue_handler, log_fn, shared_secret, auth_token, max_body_bytes):
         captured["host"] = host
         captured["port"] = port
         return FakeServer()
@@ -206,3 +218,34 @@ def test_webhook_listener_env_port_out_of_range_falls_back_default(tmp_path, mon
 
     assert exit_code == 0
     assert captured["port"] == 8000
+
+
+def test_webhook_listener_env_max_body_bytes_fallback(tmp_path, monkeypatch):
+    queue_path = tmp_path / "queue.jsonl"
+    monkeypatch.setenv("CI_HUNTER_WEBHOOK_MAX_BODY_BYTES", "invalid")
+    captured = {}
+
+    class FakeServer:
+        server_address = ("127.0.0.1", 8000)
+
+        def handle_request(self):
+            return None
+
+        def serve_forever(self):
+            return None
+
+        def server_close(self):
+            return None
+
+    def factory(*, host, port, enqueue_handler, log_fn, shared_secret, auth_token, max_body_bytes):
+        captured["max_body_bytes"] = max_body_bytes
+        return FakeServer()
+
+    exit_code = main(
+        ["--queue-file", str(queue_path), "--once"],
+        server_factory=factory,
+        out=io.StringIO(),
+    )
+
+    assert exit_code == 0
+    assert captured["max_body_bytes"] == 1024 * 1024

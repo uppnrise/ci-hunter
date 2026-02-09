@@ -14,6 +14,10 @@ DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8000
 ENV_HOST = "CI_HUNTER_WEBHOOK_HOST"
 ENV_PORT = "CI_HUNTER_WEBHOOK_PORT"
+ENV_SECRET = "CI_HUNTER_WEBHOOK_SECRET"
+ENV_AUTH_TOKEN = "CI_HUNTER_WEBHOOK_AUTH_TOKEN"
+ENV_MAX_BODY_BYTES = "CI_HUNTER_WEBHOOK_MAX_BODY_BYTES"
+DEFAULT_MAX_BODY_BYTES = 1024 * 1024
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -54,6 +58,9 @@ def main(
         port=args.port,
         enqueue_handler=enqueue_handler,
         log_fn=lambda message: out.write(f"{message}\n"),
+        shared_secret=os.environ.get(ENV_SECRET),
+        auth_token=os.environ.get(ENV_AUTH_TOKEN),
+        max_body_bytes=_default_max_body_bytes(),
     )
     host, port = server.server_address
     out.write(f"listening on {host}:{port}\n")
@@ -80,6 +87,19 @@ def _default_port() -> int:
     if _is_valid_port(port):
         return port
     return DEFAULT_PORT
+
+
+def _default_max_body_bytes() -> int:
+    raw_value = os.environ.get(ENV_MAX_BODY_BYTES)
+    if raw_value is None:
+        return DEFAULT_MAX_BODY_BYTES
+    try:
+        value = int(raw_value)
+    except ValueError:
+        return DEFAULT_MAX_BODY_BYTES
+    if value <= 0:
+        return DEFAULT_MAX_BODY_BYTES
+    return value
 
 
 def _port_value(value: str) -> int:

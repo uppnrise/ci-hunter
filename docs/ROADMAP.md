@@ -26,14 +26,16 @@
 22) Webhook HTTP handler building blocks
 23) Stdlib HTTP webhook adapter (`serve_http`) wired to webhook handler stack
 24) Webhook listener CLI lifecycle (`--once`, `serve_forever`, graceful shutdown, host/port config)
+25) Webhook listener hardening (signature verification, body size limit, auth token)
 
 ## Planned
 
 ### Near-term (next)
-1) Webhook listener hardening (signature verification, input limits, request auth controls)
-2) Postgres storage + migrations
-3) Provider abstraction + GitLab support
-4) Step/test change-point detection + flake detection
+1) Postgres storage + migrations
+2) Provider abstraction + GitLab support
+3) Step/test change-point detection + flake detection
+4) Webhook listener observability (structured request metrics + reject counters)
+5) Webhook request-body hardening beyond `Content-Length` (streaming/chunked-body guard)
 
 ### Medium-term (from Architecture)
 1) Attribution to touched files (git diff integration)

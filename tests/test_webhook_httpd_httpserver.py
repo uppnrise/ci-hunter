@@ -70,3 +70,38 @@ def test_httpserver_requires_event_header():
 
     assert status == 400
     assert payload == b"missing event"
+
+
+def test_httpserver_rejects_oversize_before_dispatch(monkeypatch):
+    import ci_hunter.webhook_httpd_httpserver as webhook_httpd_httpserver
+
+    called = {"count": 0}
+
+    def fail_handle_incoming(**_kwargs):
+        called["count"] += 1
+        raise AssertionError("handle_incoming must not be called for oversized requests")
+
+    monkeypatch.setattr(webhook_httpd_httpserver, "handle_incoming", fail_handle_incoming)
+    server = serve_http(
+        host="127.0.0.1",
+        port=0,
+        enqueue_handler=lambda _e, _p: True,
+        log_fn=lambda _msg: None,
+        max_body_bytes=1,
+    )
+    thread = threading.Thread(target=server.handle_request, daemon=True)
+    thread.start()
+
+    status, payload = _send_request(
+        server,
+        "POST",
+        body="{}",
+        headers={"X-GitHub-Event": "pull_request"},
+    )
+
+    thread.join(timeout=1)
+    server.server_close()
+
+    assert status == 413
+    assert payload == b"payload too large"
+    assert called["count"] == 0
