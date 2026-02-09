@@ -100,10 +100,10 @@ main(["--repo", "owner/repo", "--dry-run", "--format", "md"])
 
 ## Webhooks (local testing)
 
-There is no HTTP webhook server yet, but you can run the webhook pipeline locally by
-passing a GitHub-style payload file into the CLI bridge. HTTP handler building blocks
-exist under `ci_hunter.webhook_http*` and `ci_hunter.webhook_httpd*` for future
-`http.server` wiring.
+You can run the webhook pipeline locally by passing a GitHub-style payload file into
+the CLI bridge. There is also a stdlib HTTP adapter (`serve_http`) under
+`ci_hunter.webhook_httpd_httpserver` for embedding in a process, but there is not yet a
+dedicated long-running webhook server CLI command.
 
 ```bash
 python -m ci_hunter.webhook_cmd \

@@ -23,12 +23,13 @@
 19) Scheduler CLI to enqueue jobs into JSONL queue
 20) Worker CLI to process JSONL queue jobs
 21) Cross-platform queue file locking (fcntl/msvcrt)
-22) Webhook HTTP handler building blocks (no server wiring yet)
+22) Webhook HTTP handler building blocks
+23) Stdlib HTTP webhook adapter (`serve_http`) wired to webhook handler stack
 
 ## Planned
 
 ### Near-term (next)
-1) Webhook listener + scheduler + worker queue
+1) Webhook listener CLI/process lifecycle (serve-forever, shutdown, config-driven host/port)
 2) Postgres storage + migrations
 3) Provider abstraction + GitLab support
 4) Step/test change-point detection + flake detection
