@@ -27,11 +27,12 @@
 23) Stdlib HTTP webhook adapter (`serve_http`) wired to webhook handler stack
 24) Webhook listener CLI lifecycle (`--once`, `serve_forever`, graceful shutdown, host/port config)
 25) Webhook listener hardening (signature verification, body size limit, auth token)
+26) Postgres storage backend support in `Storage` + Alembic initial migration scaffold
 
 ## Planned
 
 ### Near-term (next)
-1) Postgres storage + migrations
+1) Postgres operationalization (containerized local DB profile + integration tests)
 2) Provider abstraction + GitLab support
 3) Step/test change-point detection + flake detection
 4) Webhook listener observability (structured request metrics + reject counters)

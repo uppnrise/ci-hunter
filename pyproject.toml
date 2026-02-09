@@ -4,9 +4,12 @@ version = "0.1.0"
 description = "CI/Test slowdown detection agent"
 requires-python = ">=3.11"
 dependencies = [
+  "alembic>=1.13.0",
   "httpx>=0.27.0",
+  "psycopg[binary]>=3.2.0",
   "pyjwt[crypto]>=2.8.0",
   "pyyaml>=6.0",
+  "sqlalchemy>=2.0.0",
 ]
 
 [project.optional-dependencies]

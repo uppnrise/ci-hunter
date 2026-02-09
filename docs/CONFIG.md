@@ -17,6 +17,8 @@ Current parameters:
     `--min-delta-pct`, `--baseline-strategy`, `--db`, `--timings-run-limit`,
     `--min-history`, `--history-window`
   - `--format {md,json}`, `--dry-run`, `--output-file`, `--no-comment`
+  - `--db` accepts SQLite (e.g. `ci_hunter.db`, `:memory:`, `sqlite:///:memory:`) and PostgreSQL URLs
+    (e.g. `postgresql://user:pass@localhost:5432/ci_hunter`)
 - Webhook listener CLI (console script `ci-hunter-webhook-listener`, entrypoint
   `ci_hunter.webhook_listener_cmd.main`) uses:
   - `--queue-file` (required), `--host`, `--port`, `--once`
@@ -49,3 +51,4 @@ Notes:
   - `401` for invalid/missing signature or auth token (when enabled)
   - `413` for payloads larger than configured `CI_HUNTER_WEBHOOK_MAX_BODY_BYTES`
 - Listener rejects oversize requests early when `Content-Length` exceeds the configured limit.
+- Migration scaffold is available via Alembic (`alembic.ini`, `migrations/`).

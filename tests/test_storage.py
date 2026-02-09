@@ -7,6 +7,7 @@ from ci_hunter.steps import StepDuration
 from ci_hunter.storage import Storage, StorageConfig, StepDurationSample, TestDurationSample
 
 REPO = "acme/repo"
+POSTGRES_URL = "postgresql://user:pass@localhost:5432/ci_hunter"
 RUN_ID = 1
 RUN_NUMBER = 42
 STATUS_COMPLETED = "completed"
@@ -201,3 +202,32 @@ def test_save_and_list_test_durations():
             duration_seconds=DURATION_TEST_BETA,
         ),
     ]
+
+
+def test_storage_exposes_sqlite_backend_name_for_memory_db():
+    storage = Storage(StorageConfig(database_url=":memory:"))
+
+    assert storage.backend_name == "sqlite"
+
+
+def test_storage_supports_sqlite_memory_url_form():
+    storage = Storage(StorageConfig(database_url="sqlite:///:memory:"))
+
+    assert storage.backend_name == "sqlite"
+
+
+def test_storage_rejects_unknown_database_scheme():
+    with pytest.raises(ValueError, match="Unsupported database scheme"):
+        Storage(StorageConfig(database_url="mysql://user:pass@localhost:3306/db"))
+
+
+def test_storage_requires_postgres_driver(monkeypatch):
+    import ci_hunter.storage as storage_module
+
+    def fail_import_psycopg():
+        raise ModuleNotFoundError("No module named 'psycopg'")
+
+    monkeypatch.setattr(storage_module, "_import_psycopg", fail_import_psycopg)
+
+    with pytest.raises(RuntimeError, match="psycopg"):
+        Storage(StorageConfig(database_url=POSTGRES_URL))
