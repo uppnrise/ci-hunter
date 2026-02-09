@@ -37,6 +37,9 @@ Migration scaffold is included via Alembic:
 alembic upgrade head
 ```
 
+For PostgreSQL deployments, run migrations before starting app flows that write/read storage.
+Runtime storage does not auto-create PostgreSQL tables.
+
 Local Postgres profile (for integration testing):
 
 ```bash

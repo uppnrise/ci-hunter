@@ -65,7 +65,13 @@ def _resolve_sqlite_path(database_url: str) -> str:
         raise ValueError("SQLite URL must include a database path")
     if parsed.path == "/:memory:":
         return ":memory:"
-    return str(Path(parsed.path).expanduser())
+    if parsed.path.startswith("//"):
+        normalized = parsed.path[1:]
+    elif parsed.path.startswith("/"):
+        normalized = parsed.path[1:]
+    else:
+        normalized = parsed.path
+    return str(Path(normalized).expanduser())
 
 
 class _SQLiteBackend:
@@ -146,6 +152,9 @@ class Storage:
         return self._backend.placeholder
 
     def _init_schema(self) -> None:
+        if self.backend_name != "sqlite":
+            # Postgres schema is owned by Alembic migrations.
+            return
         run_id_type = "INTEGER" if self.backend_name == "sqlite" else "BIGINT"
         run_number_type = "INTEGER" if self.backend_name == "sqlite" else "BIGINT"
         duration_type = "REAL" if self.backend_name == "sqlite" else "DOUBLE PRECISION"

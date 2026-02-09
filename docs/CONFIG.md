@@ -55,3 +55,5 @@ Notes:
 - Alembic runtime DB URL can be overridden via `CI_HUNTER_ALEMBIC_URL` (useful for
   migration smoke tests and ephemeral environments).
 - Postgres integration tests use `CI_HUNTER_POSTGRES_TEST_URL`.
+- PostgreSQL schema is migration-managed (Alembic). `Storage` auto-bootstraps schema
+  only for SQLite.

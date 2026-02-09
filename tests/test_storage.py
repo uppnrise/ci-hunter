@@ -231,3 +231,48 @@ def test_storage_requires_postgres_driver(monkeypatch):
 
     with pytest.raises(RuntimeError, match="psycopg"):
         Storage(StorageConfig(database_url=POSTGRES_URL))
+
+
+def test_storage_does_not_bootstrap_schema_for_postgres(monkeypatch):
+    import ci_hunter.storage as storage_module
+
+    observed_queries: list[str] = []
+
+    class FakePostgresBackend:
+        name = "postgresql"
+        placeholder = "%s"
+
+        def __init__(self, database_url: str) -> None:
+            self.database_url = database_url
+
+        def execute(self, query: str, params: tuple[object, ...] = ()) -> list[tuple[object, ...]]:
+            observed_queries.append(query)
+            return []
+
+        def executemany(self, query: str, rows: list[tuple[object, ...]]) -> None:
+            return None
+
+        def commit(self) -> None:
+            return None
+
+        def close(self) -> None:
+            return None
+
+    monkeypatch.setattr(storage_module, "_PostgresBackend", FakePostgresBackend)
+
+    storage = Storage(StorageConfig(database_url=POSTGRES_URL))
+    storage.close()
+
+    assert observed_queries == []
+
+
+def test_resolve_sqlite_relative_url_path():
+    import ci_hunter.storage as storage_module
+
+    assert storage_module._resolve_sqlite_path("sqlite:///ci_hunter.db") == "ci_hunter.db"
+
+
+def test_resolve_sqlite_absolute_url_path():
+    import ci_hunter.storage as storage_module
+
+    assert storage_module._resolve_sqlite_path("sqlite:////tmp/ci_hunter.db") == "/tmp/ci_hunter.db"
