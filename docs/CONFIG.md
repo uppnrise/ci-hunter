@@ -65,6 +65,8 @@ Notes:
 - Migration scaffold is available via Alembic (`alembic.ini`, `migrations/`).
 - Alembic runtime DB URL can be overridden via `CI_HUNTER_ALEMBIC_URL` (useful for
   migration smoke tests and ephemeral environments).
+  - For PostgreSQL URLs, bare `postgresql://...` values are normalized to
+    `postgresql+psycopg://...` for Alembic migration execution.
 - Postgres integration tests use `CI_HUNTER_POSTGRES_TEST_URL`.
 - PostgreSQL schema is migration-managed (Alembic). `Storage` auto-bootstraps schema
   only for SQLite.

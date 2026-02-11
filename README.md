@@ -39,6 +39,9 @@ Migration scaffold is included via Alembic:
 alembic upgrade head
 ```
 
+Alembic URLs using `postgresql://...` are normalized to `postgresql+psycopg://...`
+at migration runtime, so the configured `psycopg` driver is used.
+
 For PostgreSQL deployments, run migrations before starting app flows that write/read storage.
 Runtime storage does not auto-create PostgreSQL tables.
 
