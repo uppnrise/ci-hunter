@@ -61,3 +61,46 @@ def test_fetch_run_step_durations_from_logs_zip():
         StepDuration(name="build_job/Install deps", duration_seconds=25.0),
         StepDuration(name="build_job/Run tests", duration_seconds=20.0),
     ]
+
+
+@respx.mock
+def test_fetch_run_step_durations_follows_redirect_to_signed_url():
+    log_text = """
+2024-01-01T00:00:05.0000000Z  Step: Checkout
+2024-01-01T00:00:15.0000000Z  Step: Install deps
+2024-01-01T00:00:40.0000000Z  Step: Run tests
+2024-01-01T00:01:00.0000000Z  [command] echo "Done"
+"""
+    zip_bytes = _make_zip_bytes("logs/build_job.txt", log_text)
+    signed_url = "https://results-receiver.actions.githubusercontent.com/logs.zip?sig=abc"
+
+    initial_route = respx.get(
+        f"{DEFAULT_BASE_URL}/repos/{REPO}/actions/runs/{RUN_ID}/logs",
+        headers={
+            HEADER_AUTHORIZATION: f"{AUTH_SCHEME} {TOKEN}",
+            HEADER_ACCEPT: GITHUB_ACCEPT_HEADER,
+            HEADER_API_VERSION: GITHUB_API_VERSION,
+        },
+    ).mock(
+        return_value=httpx.Response(
+            302,
+            headers={"Location": signed_url},
+        )
+    )
+    signed_route = respx.get(signed_url).mock(
+        return_value=httpx.Response(
+            200,
+            content=zip_bytes,
+            headers={"Content-Type": "application/zip"},
+        )
+    )
+
+    durations = fetch_run_step_durations(TOKEN, REPO, RUN_ID)
+
+    assert initial_route.called
+    assert signed_route.called
+    assert durations == [
+        StepDuration(name="build_job/Checkout", duration_seconds=10.0),
+        StepDuration(name="build_job/Install deps", duration_seconds=25.0),
+        StepDuration(name="build_job/Run tests", duration_seconds=20.0),
+    ]

@@ -308,3 +308,76 @@ def test_fetch_store_analyze_fetches_outcomes_when_only_outcome_fetcher_set():
         RUN_NUMBER_BASELINE,
         RUN_NUMBER_CURRENT,
     ]
+
+
+def test_fetch_store_analyze_supports_keyword_only_fetchers():
+    storage = Storage(StorageConfig(database_url=":memory:"))
+    runs = [
+        WorkflowRun(
+            id=RUN_ID_BASELINE,
+            run_number=RUN_NUMBER_BASELINE,
+            status=STATUS_COMPLETED,
+            conclusion=CONCLUSION_SUCCESS,
+            created_at=CREATED_AT,
+            updated_at=UPDATED_AT_BASELINE,
+            head_sha=HEAD_SHA_BASELINE,
+        ),
+    ]
+
+    def client_factory(token: str) -> DummyClient:
+        return DummyClient(runs)
+
+    def keyword_only_step_fetcher(
+        *,
+        token: str,
+        repo: str,
+        run_id: int,
+    ) -> list[StepDuration]:
+        assert token == TOKEN
+        assert repo == REPO
+        assert run_id == RUN_ID_BASELINE
+        return [StepDuration(name="Checkout", duration_seconds=5.0)]
+
+    def keyword_only_test_fetcher(
+        *,
+        token: str,
+        repo: str,
+        run_id: int,
+    ) -> list[TestDuration]:
+        assert token == TOKEN
+        assert repo == REPO
+        assert run_id == RUN_ID_BASELINE
+        return [TestDuration(name="tests.test_alpha", duration_seconds=1.0)]
+
+    def keyword_only_outcome_fetcher(
+        *,
+        token: str,
+        repo: str,
+        run_id: int,
+    ) -> list[TestOutcome]:
+        assert token == TOKEN
+        assert repo == REPO
+        assert run_id == RUN_ID_BASELINE
+        return [TestOutcome(name="tests.alpha::test_x", outcome=TEST_OUTCOME_FAILED)]
+
+    fetch_store_analyze(
+        auth=DummyAuth(),
+        client_factory=client_factory,
+        storage=storage,
+        repo=REPO,
+        min_delta_pct=MIN_DELTA_PCT,
+        baseline_strategy=BASELINE_STRATEGY_MEDIAN,
+        step_fetcher=keyword_only_step_fetcher,
+        test_fetcher=keyword_only_test_fetcher,
+        test_outcome_fetcher=keyword_only_outcome_fetcher,
+    )
+
+    assert [sample.run_number for sample in storage.list_step_durations(REPO)] == [
+        RUN_NUMBER_BASELINE,
+    ]
+    assert [sample.run_number for sample in storage.list_test_durations(REPO)] == [
+        RUN_NUMBER_BASELINE,
+    ]
+    assert [sample.run_number for sample in storage.list_test_outcomes(REPO)] == [
+        RUN_NUMBER_BASELINE,
+    ]

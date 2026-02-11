@@ -96,7 +96,7 @@ def _fetch_and_store_timings(
         if step_fetcher is not None:
             stats.step_attempted += 1
             try:
-                durations = step_fetcher(token, repo, run.id)
+                durations = step_fetcher(token=token, repo=repo, run_id=run.id)
                 if durations:
                     storage.save_step_durations(repo, run.id, durations)
                 else:
@@ -117,7 +117,7 @@ def _fetch_and_store_timings(
         if test_fetcher is not None:
             stats.test_attempted += 1
             try:
-                durations = test_fetcher(token, repo, run.id)
+                durations = test_fetcher(token=token, repo=repo, run_id=run.id)
                 if durations:
                     storage.save_test_durations(repo, run.id, durations)
                 else:
@@ -137,7 +137,7 @@ def _fetch_and_store_timings(
                 )
         if test_outcome_fetcher is not None:
             try:
-                outcomes = test_outcome_fetcher(token, repo, run.id)
+                outcomes = test_outcome_fetcher(token=token, repo=repo, run_id=run.id)
                 if outcomes:
                     storage.save_test_outcomes(repo, run.id, outcomes)
             except Exception:

@@ -35,6 +35,7 @@ def fetch_run_step_durations(
             HEADER_ACCEPT: GITHUB_ACCEPT_HEADER,
             HEADER_API_VERSION: GITHUB_API_VERSION,
         },
+        follow_redirects=True,
         timeout=DEFAULT_TIMEOUT_SECONDS,
     )
     response.raise_for_status()
