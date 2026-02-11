@@ -15,6 +15,7 @@ class StepDuration:
 STEP_PREFIX = "Step:"
 TIMESTAMP_PATTERN = re.compile(r"^(?P<ts>\S+)\s+(?P<rest>.+)$")
 MAX_FRACTIONAL_SECONDS = 6
+UTF8_BOM = "\ufeff"
 
 
 def parse_step_durations(log_text: str) -> List[StepDuration]:
@@ -60,6 +61,7 @@ def parse_step_durations(log_text: str) -> List[StepDuration]:
 
 
 def _parse_iso_datetime(value: str) -> datetime:
+    value = value.lstrip(UTF8_BOM)
     normalized = _normalize_iso_timestamp(value)
     parsed = datetime.fromisoformat(normalized)
     if parsed.tzinfo is None:
