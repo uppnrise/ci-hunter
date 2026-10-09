@@ -23,9 +23,24 @@ Create a virtual environment and install dev deps:
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install -U pip
-pip install -e ".[dev]"
+python -m pip install --require-hashes -r requirements-dev.txt
+python -m pip install --no-deps --no-build-isolation -e .
 ```
+
+`requirements-dev.txt` locks runtime, development, and build dependencies with
+distribution hashes across platforms. Install it before the editable project so
+the build uses the locked setuptools and wheel versions.
+
+To refresh the lock after editing `pyproject.toml`, use
+[uv](https://docs.astral.sh/uv/):
+
+```bash
+uv pip compile pyproject.toml --extra dev --universal --python-version 3.11 --generate-hashes --upgrade --output-file requirements-dev.txt
+```
+
+Commit `pyproject.toml` and the refreshed lock together, then run the unit tests
+and PostgreSQL integration test below. CI tests Python 3.11 and 3.14; Dependabot
+checks Python packages and GitHub Actions weekly.
 
 ## Database backends
 
@@ -249,8 +264,9 @@ Note: queue file access uses best-effort OS-specific file locks (fcntl on Unix, 
 ## Tests
 
 ```bash
-pip install -e ".[dev]"
-pytest -q
+python -m pip install --require-hashes -r requirements-dev.txt
+python -m pip install --no-deps --no-build-isolation -e .
+python -m pytest -q
 ```
 
 ## Docs
