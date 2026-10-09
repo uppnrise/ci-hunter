@@ -2,6 +2,7 @@ import io
 import zipfile
 
 import httpx
+import pytest
 import respx
 
 from ci_hunter.github.artifacts import (
@@ -142,3 +143,38 @@ def test_fetch_junit_test_outcomes_from_artifacts():
     assert outcomes == [
         TestOutcome(name="pkg.test_a::test_one", outcome=TEST_OUTCOME_FAILED)
     ]
+
+
+@pytest.mark.parametrize(
+    ("fetcher", "expected"),
+    [
+        (
+            fetch_junit_durations_from_artifacts,
+            [TestDuration(name="pkg.test_a::test_one", duration_seconds=1.5)],
+        ),
+        (
+            fetch_junit_test_outcomes_from_artifacts,
+            [TestOutcome(name="pkg.test_a::test_one", outcome=TEST_OUTCOME_FAILED)],
+        ),
+    ],
+)
+@respx.mock
+def test_fetch_junit_artifact_follows_download_redirect(fetcher, expected):
+    respx.get(
+        f"{DEFAULT_BASE_URL}/repos/{REPO}/actions/runs/{RUN_ID}/artifacts"
+    ).respond(200, json={"artifacts": [{"id": ARTIFACT_ID}]})
+    download_url = "https://artifacts.example.test/report.zip"
+    respx.get(
+        f"{DEFAULT_BASE_URL}/repos/{REPO}/actions/artifacts/{ARTIFACT_ID}/zip"
+    ).respond(302, headers={"Location": download_url})
+    xml_text = (
+        '<testsuite><testcase classname="pkg.test_a" name="test_one" time="1.5">'
+        '<failure message="boom" /></testcase></testsuite>'
+    )
+    signed_download = respx.get(download_url).respond(
+        200, content=_make_zip_bytes("junit.xml", xml_text)
+    )
+
+    assert fetcher(token=TOKEN, repo=REPO, run_id=RUN_ID) == expected
+    assert signed_download.called
+    assert HEADER_AUTHORIZATION not in signed_download.calls.last.request.headers
